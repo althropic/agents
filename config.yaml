@@ -1,0 +1,24 @@
+llm:
+  base_url: "http://localhost:8080/v1"
+  api_key: "local-env"
+  model: "gpt-oss:120b"
+  temperature: 0.2
+  max_tokens: 4096
+
+agent:
+  system_prompt: "You are a File Assistant Agent. Use your tools to read, write, search, and manage files. Always use a tool when you need real data — never guess file contents."
+  max_iterations: 20
+  max_file_size_kb: 100
+
+memory:
+  persist: false
+  export_path: ".agent_memory"
+
+file_access:
+  allowed_roots:
+    - "."
+
+logging:
+  level: "INFO"
+  log_dir: "logs"
+  max_size_kb: 100
