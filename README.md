@@ -1,26 +1,30 @@
 # File Assistant Agent
 
-A local AI agent that reads, writes, and searches your filesystem using an OpenAI-compatible LLM endpoint. No cloud required — point it at any local model server and go.
-
-## What it does
-
-You give it a task in plain English. It figures out which file tools to use, runs them, reads the results, and keeps going until it has a complete answer.
+An AI assistant that works with files on your computer. Ask it in plain English — it figures out what to do.
 
 ```
 >>> summarize src/config.py
-The config module defines a typed AppConfig using Pydantic v2. It loads
-config.yaml from the project root and overlays secrets from .env ...
+>>> find all Python files under tests/
+>>> read src/agent/loop.py and explain what it does
 ```
 
-## Requirements
+No internet connection needed. It runs entirely on your machine using a local AI model.
 
-- [Conda](https://docs.conda.io/en/latest/miniconda.html) (for the isolated Python env)
-- A local LLM server at `http://localhost:8080/v1` (e.g. Ollama, vLLM, llama.cpp)
+---
+
+## Before you start
+
+You'll need:
+
+- [Miniconda](https://docs.conda.io/en/latest/miniconda.html) — manages the Python environment
+- A local AI model server running at `http://localhost:8080/v1` (e.g. [Ollama](https://ollama.com), vLLM, or llama.cpp)
 - Python 3.11
 
-## Setup
+---
 
-**One time, from the project root:**
+## Installation
+
+Run these commands once from the project folder:
 
 ```bash
 conda create --prefix ./.conda python=3.11 -y
