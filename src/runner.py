@@ -134,11 +134,11 @@ def run_repl(workspace: Path) -> None:
 
 
 def main() -> None:
-    args = sys.argv[1:]
-    if args:
-        run_once(" ".join(args))
+    workspace, prompt_tokens = _parse_args()
+    if prompt_tokens:
+        run_once(" ".join(prompt_tokens), workspace)
     else:
-        run_repl()
+        run_repl(workspace)
 
 
 if __name__ == "__main__":
