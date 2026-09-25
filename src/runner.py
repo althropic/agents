@@ -122,10 +122,11 @@ def run_repl(workspace: Path) -> None:
         if prompt.lower() in {"exit", "quit"}:
             print("Bye.")
             logger.info("REPL exited by user command")
+            memory.maybe_export()
             break
 
         try:
-            answer = loop.run(prompt)
+            answer = loop.run_with_memory(prompt, memory)
             print(answer)
         except Exception as exc:  # noqa: BLE001
             logger.error("REPL error: %s", exc, exc_info=True)
