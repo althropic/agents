@@ -31,14 +31,16 @@ class AgentLoop:
             api_key=config.llm.api_key,
         )
         self._tool_map = build_tool_map(
-            allowed_roots=config.resolved_roots,
+            allowed_roots=config.resolved_roots(),
             max_size_kb=config.agent.max_file_size_kb,
         )
         logger.info(
-            "AgentLoop ready: model=%s base_url=%s max_iter=%d",
+            "AgentLoop ready: model=%s base_url=%s max_iter=%d workspace=%s roots=%s",
             config.llm.model,
             config.llm.base_url,
             config.agent.max_iterations,
+            config.workspace,
+            config.resolved_roots(),
         )
 
     # ------------------------------------------------------------------
@@ -80,7 +82,7 @@ class AgentLoop:
         memory = Memory(
             system_prompt=self._cfg.agent.system_prompt,
             persist=self._cfg.memory.persist,
-            export_path=self._cfg.memory.export_path,
+            export_path=str(self._cfg.resolved_memory_export_path()),
         )
         memory.add({"role": "user", "content": user_prompt})
 
