@@ -30,7 +30,7 @@ def _attach_handlers(
     max_bytes: int,
     level: int,
 ) -> None:
-    """Attach file + console handlers to the root logger (once only)."""
+    """Attach file handler to the root logger (once only)."""
     global _handler_attached
     if _handler_attached:
         return
