@@ -69,8 +69,9 @@ def _make_response(message):
 
 @pytest.fixture()
 def agent_config(app_config: AppConfig, tmp_workspace: Path) -> AppConfig:
-    """Return the test AppConfig with allowed_roots overridden to tmp_workspace."""
-    app_config.file_access.allowed_roots = [str(tmp_workspace)]
+    """Return the test AppConfig with workspace and allowed_roots set to tmp_workspace."""
+    app_config.workspace = tmp_workspace.resolve()
+    app_config.file_access.allowed_roots = ["."]
     return app_config
 
 
