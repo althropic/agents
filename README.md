@@ -33,97 +33,108 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt
 ```
 
-**Optional — override the API key or endpoint via `.env`:**
+---
 
-```
-LLM_API_KEY=your-key-here
-```
+## Running the assistant
 
-## Usage
-
-**Interactive REPL:**
+**Start an interactive session:**
 
 ```bash
 conda activate ./.conda
 python -m src.runner
 ```
 
+Type your request and press Enter. Type `exit` when you're done.
+
 ```
 File Assistant Agent — type your request, or 'exit' to quit.
 
 >>> list the files in src/
->>> read src/agent/loop.py and explain the main loop
->>> find all Python files under tests/
+>>> what does config.yaml contain?
+>>> find all .py files under tests/
 >>> exit
 ```
 
-**Single-shot (pipe-friendly):**
+**Run a single task and exit:**
 
 ```bash
-python -m src.runner "grep for TODO in src/agent/tools.py"
+python -m src.runner "summarize src/config.py"
 ```
 
-**Via the launch script (Windows):**
+**On Windows, you can also use the launch script:**
 
 ```bat
-scripts\run.bat "summarize src/config.py"
 scripts\run.bat
+scripts\run.bat "summarize src/config.py"
 ```
 
-## Configuration
+---
 
-All settings live in `config.yaml`. Nothing is hardcoded.
+## What it can do
 
-| Key | Default | What it controls |
-|-----|---------|-----------------|
-| `llm.base_url` | `http://localhost:8080/v1` | LLM server endpoint |
-| `llm.model` | `gpt-oss:120b` | Model name to request |
-| `agent.max_iterations` | `20` | Max tool-call rounds before giving up |
-| `agent.max_file_size_kb` | `100` | Files larger than this are refused |
-| `file_access.allowed_roots` | `["."]` | Directories the agent is allowed to touch |
-| `memory.persist` | `false` | Save conversation history to `.agent_memory/` |
-| `logging.level` | `INFO` | Log verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
+| Action | Example request |
+|--------|----------------|
+| Read a file | "show me what's in config.yaml" |
+| Write a file | "create a file called notes.txt with..." |
+| List a folder | "what files are in the src/ folder?" |
+| Search for files | "find all markdown files in this project" |
+| Search inside a file | "find every line in tools.py that mentions 'error'" |
 
-## Available tools
+The assistant can only access folders listed under `file_access.allowed_roots` in `config.yaml`. By default that's just the project folder. Anything outside is blocked.
 
-| Tool | What it does |
-|------|-------------|
-| `read_file` | Read the full text of a file |
-| `write_file` | Write or overwrite a file |
-| `list_dir` | List files and folders in a directory |
-| `search_files` | Find files by glob pattern (e.g. `**/*.py`) |
-| `grep` | Search inside a file with a regex |
+---
 
-The agent can only access paths inside `file_access.allowed_roots`. Anything outside is blocked.
+## Settings
 
-## Running tests
+All settings are in `config.yaml`. Open it to change how the assistant behaves.
+
+| Setting | Default | What it does |
+|---------|---------|-------------|
+| `llm.base_url` | `http://localhost:8080/v1` | Where your AI model server is running |
+| `llm.model` | `gpt-oss:120b` | Which model to use |
+| `agent.max_iterations` | `20` | How many steps the assistant takes before giving up |
+| `agent.max_file_size_kb` | `100` | Files bigger than this (in KB) won't be read |
+| `file_access.allowed_roots` | `["."]` | Folders the assistant is allowed to access |
+| `memory.persist` | `false` | Save the conversation to disk after each session |
+| `logging.level` | `INFO` | How much detail to write to the log file |
+
+To use a different API key, create a `.env` file in the project folder:
+
+```
+LLM_API_KEY=your-key-here
+```
+
+---
+
+## Logs
+
+The assistant keeps a log of everything it does in `logs/agent.log`. If something goes wrong, that's the first place to look. The file resets automatically when it gets too large.
+
+---
+
+## Running the tests
 
 ```bash
 conda activate ./.conda
 pytest
 ```
 
-All 34 tests run in under a second with no LLM connection needed — the test suite mocks the API entirely.
+The tests don't need a live AI model — they run entirely with a fake one. All 34 should pass in under a second.
 
-## Project structure
+---
+
+## Project layout
 
 ```
 src/
-  config.py          Config loading and validation (Pydantic)
-  logger.py          Logging factory → logs/agent.log
-  runner.py          Entry point: REPL + single-shot mode
+  config.py        loads and checks settings from config.yaml
+  logger.py        handles writing to the log file
+  runner.py        starts the assistant (interactive or single task)
   agent/
-    tools.py         File tool implementations + OpenAI schemas
-    loop.py          ReAct agent loop
-    memory.py        Conversation history + optional export
-tests/
-  conftest.py        Shared fixtures
-  test_tools.py      Unit tests for all file tools
-  test_agent.py      Integration tests with mock LLM
-logs/                Runtime logs (auto-created)
-config.yaml          All configurable settings
+    tools.py       the file actions (read, write, list, search)
+    loop.py        the main thinking loop
+    memory.py      keeps track of the conversation
+tests/             automated checks
+logs/              log files (created automatically)
+config.yaml        all your settings
 ```
-
-## Logs
-
-The agent writes structured logs to `logs/agent.log` (rotates at 100 KB). To see debug-level output, set `logging.level: DEBUG` in `config.yaml`.
