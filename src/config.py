@@ -97,4 +97,6 @@ def load_config(
     with config_path.open("r", encoding="utf-8") as fh:
         raw = yaml.safe_load(fh)
 
-    return AppConfig.model_validate(raw)
+    cfg = AppConfig.model_validate(raw)
+    cfg.workspace = (workspace or Path.cwd()).resolve()
+    return cfg
