@@ -104,8 +104,9 @@ All settings are in `config.yaml`. Open it to change how the assistant behaves.
 | `llm.model` | `gpt-oss:120b` | Which model to use |
 | `agent.max_iterations` | `20` | How many steps the assistant takes before giving up |
 | `agent.max_file_size_kb` | `100` | Files bigger than this (in KB) won't be read |
-| `file_access.allowed_roots` | `["."]` | Folders the assistant is allowed to access |
+| `file_access.allowed_roots` | `["."]` | Folders the assistant can access, relative to `--workspace` |
 | `memory.persist` | `false` | Save the conversation to disk after each session |
+| `memory.export_path` | `.agent_memory` | Where to write saved sessions, relative to `--workspace` |
 | `logging.level` | `INFO` | How much detail to write to the log file |
 
 To use a different API key, create a `.env` file in the project folder:
