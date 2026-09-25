@@ -9,8 +9,20 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **`src/agent/loop.py`** — `AgentLoop.run_with_memory()` public method: runs a task against a caller-supplied `Memory` instance. Enables the REPL to share conversation history across prompts within a session.
+- **`src/runner.py`** — `--workspace DIR` CLI flag (via `argparse`). Accepts any directory as the agent's operating root; defaults to `os.getcwd()`. Prints the active workspace on REPL startup.
+
+### Changed
+
+- **`src/config.py`** — `AppConfig.resolved_roots()` is now a regular method (was a `@property`). Resolves relative roots against `cfg.workspace` instead of `_CONFIG_PATH.parent`, making the sandbox portable. `load_config()` accepts an optional `workspace` parameter. New `AppConfig.resolved_memory_export_path()` method anchors the memory export directory to the same workspace.
+- **`src/agent/loop.py`** — `AgentLoop.run()` delegates to `run_with_memory()` with a fresh `Memory` per call (single-shot behaviour unchanged). Memory export path now resolved via `cfg.resolved_memory_export_path()`.
+- **`src/runner.py`** — REPL now creates a single `Memory` instance outside the prompt loop, giving the agent access to prior turns within the same session. Replaced raw `sys.argv` slicing with `argparse`.
+
 ### Fixed
 
+- **`src/agent/tools.py`** — `_resolve_and_check`: replaced `str(target).startswith(str(root))` with `target.is_relative_to(root)`. The old check incorrectly allowed `/foo` to pass the guard for a root of `/foobar`.
 - **`scripts/run.bat`** — Removed broken minimized-window relaunch pattern that leaked `-minimized` and `ECHO is off.` as prompts to the runner. Simplified to a direct conda activate + launch.
 - **`src/logger.py`** — Removed `StreamHandler` from root logger; logs now go to `logs/agent.log` only. Eliminates INFO noise in the terminal during interactive and single-shot use.
 
