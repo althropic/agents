@@ -50,13 +50,22 @@ class AgentLoop:
     def run(self, user_prompt: str) -> str:
         """
         Run a single task to completion and return the final answer string.
+        Creates a fresh Memory per call (stateless across calls).
         Raises RuntimeError if max_iterations is exceeded without a final answer.
         """
         memory = Memory(
             system_prompt=self._cfg.agent.system_prompt,
             persist=self._cfg.memory.persist,
-            export_path=self._cfg.memory.export_path,
+            export_path=str(self._cfg.resolved_memory_export_path()),
         )
+        return self.run_with_memory(user_prompt, memory)
+
+    def run_with_memory(self, user_prompt: str, memory: Memory) -> str:
+        """
+        Run a single task using the provided *memory* instance.
+        Use this from the REPL to share history across prompts.
+        Raises RuntimeError if max_iterations is exceeded without a final answer.
+        """
         memory.add({"role": "user", "content": user_prompt})
         logger.info("AgentLoop.run: user_prompt=%r", user_prompt[:120])
 
