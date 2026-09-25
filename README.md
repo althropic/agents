@@ -44,21 +44,31 @@ conda activate ./.conda
 python -m src.runner
 ```
 
-Type your request and press Enter. Type `exit` when you're done.
+By default the assistant operates on the current directory. Each prompt you send in the same session shares conversation history — you can refer back to results from earlier turns.
 
 ```
-File Assistant Agent — type your request, or 'exit' to quit.
+File Assistant Agent — workspace: C:\your\project
+Type your request, or 'exit' to quit.
 
 >>> list the files in src/
->>> what does config.yaml contain?
+>>> what does the first one contain?
 >>> find all .py files under tests/
 >>> exit
 ```
+
+**Point the assistant at a different directory:**
+
+```bash
+python -m src.runner --workspace /path/to/other/project
+```
+
+The `--workspace` flag sets the root directory the assistant is allowed to read and write. It also becomes the base for resolving any relative paths in `config.yaml` (like `allowed_roots` and `memory.export_path`).
 
 **Run a single task and exit:**
 
 ```bash
 python -m src.runner "summarize src/config.py"
+python -m src.runner --workspace /path/to/project "summarize src/config.py"
 ```
 
 **On Windows, you can also use the launch script:**
@@ -80,7 +90,7 @@ scripts\run.bat "summarize src/config.py"
 | Search for files | "find all markdown files in this project" |
 | Search inside a file | "find every line in tools.py that mentions 'error'" |
 
-The assistant can only access folders listed under `file_access.allowed_roots` in `config.yaml`. By default that's just the project folder. Anything outside is blocked.
+The assistant can only access folders listed under `file_access.allowed_roots` in `config.yaml`, resolved relative to the active workspace. Anything outside is blocked.
 
 ---
 
