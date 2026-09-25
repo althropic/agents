@@ -60,19 +60,36 @@ class AppConfig(BaseModel):
     memory: MemoryConfig
     file_access: FileAccessConfig
     logging: LoggingConfig
+    # Resolved at load time from the --workspace flag (or cwd fallback).
+    # Not read from config.yaml — set by load_config().
+    workspace: Path = Field(default_factory=Path.cwd, exclude=True)
 
-    @property
+    model_config = {"arbitrary_types_allowed": True}
+
     def resolved_roots(self) -> List[Path]:
-        """Return allowed_roots as absolute Path objects."""
-        base = _CONFIG_PATH.parent
+        """Return allowed_roots as absolute Paths anchored to workspace."""
         return [
-            Path(r).resolve() if Path(r).is_absolute() else (base / r).resolve()
+            Path(r).resolve() if Path(r).is_absolute() else (self.workspace / r).resolve()
             for r in self.file_access.allowed_roots
         ]
 
+    def resolved_memory_export_path(self) -> Path:
+        """Return the memory export path anchored to workspace."""
+        p = Path(self.memory.export_path)
+        return p.resolve() if p.is_absolute() else (self.workspace / p).resolve()
 
-def load_config(path: Optional[Path] = None) -> AppConfig:
-    """Load and validate config.yaml, returning a typed AppConfig."""
+
+def load_config(
+    path: Optional[Path] = None,
+    workspace: Optional[Path] = None,
+) -> AppConfig:
+    """Load and validate config.yaml, returning a typed AppConfig.
+
+    Args:
+        path: Override path to config.yaml. Defaults to the repo-root config.
+        workspace: The working directory the agent should operate on.
+                   Defaults to os.getcwd() at call time.
+    """
     config_path = path or _CONFIG_PATH
     if not config_path.exists():
         raise FileNotFoundError(f"Config file not found: {config_path}")
