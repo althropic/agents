@@ -28,9 +28,7 @@ def _resolve_and_check(
 ) -> Path:
     """Resolve *path* and verify it sits under one of *allowed_roots*."""
     target = Path(path).resolve()
-    if not any(
-        str(target).startswith(str(root)) for root in allowed_roots
-    ):
+    if not any(target == root or target.is_relative_to(root) for root in allowed_roots):
         raise PermissionError(
             f"Access denied: '{target}' is outside allowed roots."
         )
