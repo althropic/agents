@@ -17,6 +17,7 @@ import sys
 from pathlib import Path
 
 from src.config import load_config
+from src.io import write_output
 from src.logger import apply_log_level, get_logger
 
 logger = get_logger(__name__)
@@ -74,7 +75,7 @@ def run_once(prompt: str, workspace: Path) -> None:
     loop = _build_loop(workspace)
     logger.info("Single-shot mode: prompt=%r workspace=%s", prompt[:120], workspace)
     answer = loop.run(prompt)
-    print(answer)
+    write_output(answer)
 
 
 def run_repl(workspace: Path) -> None:
@@ -105,14 +106,14 @@ def run_repl(workspace: Path) -> None:
     )
 
     logger.info("REPL mode started (persistent memory, workspace=%s)", workspace)
-    print(f"File Assistant Agent — workspace: {workspace}")
-    print("Type your request, or 'exit' to quit.\n")
+    write_output(f"File Assistant Agent — workspace: {workspace}")
+    write_output("Type your request, or 'exit' to quit.\n")
 
     while True:
         try:
             prompt = input(">>> ").strip()
         except (KeyboardInterrupt, EOFError):
-            print("\nBye.")
+            write_output("\nBye.")
             logger.info("REPL exited by user")
             memory.maybe_export()
             break
@@ -120,17 +121,17 @@ def run_repl(workspace: Path) -> None:
         if not prompt:
             continue
         if prompt.lower() in {"exit", "quit"}:
-            print("Bye.")
+            write_output("Bye.")
             logger.info("REPL exited by user command")
             memory.maybe_export()
             break
 
         try:
             answer = loop.run_with_memory(prompt, memory)
-            print(answer)
+            write_output(answer)
         except Exception as exc:  # noqa: BLE001
             logger.error("REPL error: %s", exc, exc_info=True)
-            print(f"Error: {exc}")
+            write_output(f"Error: {exc}")
 
 
 def main() -> None:
