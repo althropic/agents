@@ -1,8 +1,8 @@
 """
-File tools exposed to the LLM via OpenAI function-calling schema.
+File tools exposed to the LLM via OpenAI function-calling.
 
-Each tool is a plain Python function plus a paired SCHEMA dict.
-ALL_TOOLS is the list passed directly to the OpenAI client.
+Each tool is a plain Python function.  Schemas live in schemas.py.
+ALL_TOOLS is re-exported here for convenience; import it from either module.
 TOOL_MAP maps function names to callables for the agent loop.
 """
 
@@ -12,6 +12,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List
 
+from src.agent.schemas import ALL_TOOLS  # noqa: F401 — re-exported for callers
 from src.logger import get_logger
 
 logger = get_logger(__name__)
