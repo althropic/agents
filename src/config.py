@@ -24,7 +24,11 @@ class LLMConfig(BaseModel):
     api_key: str = Field(default="local-env")
     model: str
     temperature: float = 0.2
-    max_tokens: int = 4096
+    max_tokens: int = 32000
+    # Tokens budgeted for the model's internal reasoning trace.
+    # Passed as reasoning_effort (or equivalent) to models that support it.
+    # Set to 0 to disable.  Ignored by models that do not expose reasoning.
+    thinking_budget: int = 0
 
     @field_validator("api_key", mode="before")
     @classmethod
