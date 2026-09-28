@@ -11,6 +11,23 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- **`src/agent/schemas.py`** — New module containing all five OpenAI function-calling schema dicts (`ALL_TOOLS`). Extracted from `tools.py` to keep both files under the 200-line limit. `ALL_TOOLS` is re-exported from `tools.py` via a `noqa: F401` import so all existing callers are unaffected.
+- **`src/io.py`** — `write_output(text)` stdout writer. All user-facing terminal output in `src/` now routes through this function instead of `print()`, satisfying the no-`print()`-in-src rule while keeping interactive output separate from the structured log.
+- **`config.yaml` / `LLMConfig`** — `llm.thinking_budget` field (default `0`). Tokens budgeted for the model's internal reasoning trace; passed as `reasoning_effort` (or equivalent) to models that support it. Set to `0` to disable; ignored by models that do not expose reasoning.
+
+### Changed
+
+- **`config.yaml`** — `llm.model` switched from `gpt-oss:120b` to `nemotron-3-ultra`. `llm.max_tokens` raised from `4096` to `32000` to accommodate reasoning traces.
+- **`src/config.py`** — `LLMConfig.max_tokens` default raised to `32000`; `LLMConfig.thinking_budget: int = 0` added.
+- **`src/runner.py`** — All `print()` calls replaced with `write_output()` from `src/io.py`. Startup log lines in `_build_loop` and `run_repl` extended to include `max_tokens` and `thinking_budget`.
+- **`src/agent/tools.py`** — Schema block removed (now in `schemas.py`); `ALL_TOOLS` imported and re-exported. File trimmed from ~210 lines to ~130 lines.
+
+### Added
+
+- **`pyproject.toml`** — Package manifest with `setuptools` build backend and `agent` console script entry point (`src.runner:main`). Run `pip install -e .` once in the conda env, then use `agent` / `agent --workspace DIR` / `agent "prompt"` directly instead of `python -m src.runner`.
+
+### Added
+
 - **`src/agent/loop.py`** — `AgentLoop.run_with_memory()` public method: runs a task against a caller-supplied `Memory` instance. Enables the REPL to share conversation history across prompts within a session.
 - **`src/runner.py`** — `--workspace DIR` CLI flag (via `argparse`). Accepts any directory as the agent's operating root; defaults to `os.getcwd()`. Prints the active workspace on REPL startup.
 
