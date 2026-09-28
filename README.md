@@ -22,7 +22,7 @@ You'll need:
 
 ---
 
-## Installation
+## Setup
 
 Run these commands once from the project folder:
 
@@ -31,7 +31,10 @@ conda create --prefix ./.conda python=3.11 -y
 conda activate ./.conda
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
+pip install -e .
 ```
+
+This registers the `agent` command in the active environment. Editable installs pick up code changes automatically — no reinstall needed.
 
 ---
 
@@ -41,7 +44,7 @@ pip install -r requirements-dev.txt
 
 ```bash
 conda activate ./.conda
-python -m src.runner
+agent
 ```
 
 By default the assistant operates on the current directory. Each prompt you send in the same session shares conversation history — you can refer back to results from earlier turns.
@@ -59,7 +62,7 @@ Type your request, or 'exit' to quit.
 **Point the assistant at a different directory:**
 
 ```bash
-python -m src.runner --workspace /path/to/other/project
+agent --workspace /path/to/other/project
 ```
 
 The `--workspace` flag sets the root directory the assistant is allowed to read and write. It also becomes the base for resolving any relative paths in `config.yaml` (like `allowed_roots` and `memory.export_path`).
@@ -67,11 +70,11 @@ The `--workspace` flag sets the root directory the assistant is allowed to read 
 **Run a single task and exit:**
 
 ```bash
-python -m src.runner "summarize src/config.py"
-python -m src.runner --workspace /path/to/project "summarize src/config.py"
+agent "summarize src/config.py"
+agent --workspace /path/to/project "summarize src/config.py"
 ```
 
-**On Windows, you can also use the launch script:**
+**On Windows, you can also use the legacy launch script (no install required):**
 
 ```bat
 scripts\run.bat
@@ -101,7 +104,9 @@ All settings are in `config.yaml`. Open it to change how the assistant behaves.
 | Setting | Default | What it does |
 |---------|---------|-------------|
 | `llm.base_url` | `http://localhost:8080/v1` | Where your AI model server is running |
-| `llm.model` | `gpt-oss:120b` | Which model to use |
+| `llm.model` | `nemotron-3-ultra` | Which model to use |
+| `llm.max_tokens` | `32000` | Maximum tokens the model may generate (include reasoning traces) |
+| `llm.thinking_budget` | `8192` | Tokens reserved for the model's internal reasoning trace; `0` to disable |
 | `agent.max_iterations` | `20` | How many steps the assistant takes before giving up |
 | `agent.max_file_size_kb` | `100` | Files bigger than this (in KB) won't be read |
 | `file_access.allowed_roots` | `["."]` | Folders the assistant can access, relative to `--workspace` |
@@ -139,13 +144,16 @@ The tests don't need a live AI model — they run entirely with a fake one. All 
 ```
 src/
   config.py        loads and checks settings from config.yaml
+  io.py            write_output() — routes all terminal output to stdout
   logger.py        handles writing to the log file
   runner.py        starts the assistant (interactive or single task)
   agent/
+    schemas.py     OpenAI function-calling schemas for all tools
     tools.py       the file actions (read, write, list, search)
     loop.py        the main thinking loop
     memory.py      keeps track of the conversation
 tests/             automated checks
 logs/              log files (created automatically)
 config.yaml        all your settings
+pyproject.toml     package manifest — defines the `agent` CLI command
 ```
