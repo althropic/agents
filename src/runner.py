@@ -88,10 +88,12 @@ def run_repl(workspace: Path) -> None:
     cfg = load_config(workspace=workspace)
     apply_log_level(cfg.logging.level)
     logger.info(
-        "Config loaded: model=%s base_url=%s max_iter=%d max_file_kb=%d "
-        "memory_persist=%s log_level=%s workspace=%s",
+        "Config loaded: model=%s base_url=%s max_tokens=%d thinking_budget=%d "
+        "max_iter=%d max_file_kb=%d memory_persist=%s log_level=%s workspace=%s",
         cfg.llm.model,
         cfg.llm.base_url,
+        cfg.llm.max_tokens,
+        cfg.llm.thinking_budget,
         cfg.agent.max_iterations,
         cfg.agent.max_file_size_kb,
         cfg.memory.persist,
