@@ -9,6 +9,22 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Added — Phase 2: Action Tools
+
+- **`src/agent/action_schemas.py`** — New module with OpenAI function-calling schemas for five action tools: `run_command`, `git_status`, `git_diff`, `git_commit`, `run_tests`.
+- **`src/agent/action_tools.py`** — New module with implementations for all five action tools. Every tool validates its command against `execution.allowed_commands` before running. `run_command` validates the working directory stays inside the workspace. All tools return formatted output (exit code + stdout + stderr).
+- **`src/config.py`** — `ExecutionConfig` Pydantic model (`allowed_commands`, `timeout_seconds`). Added to `AppConfig` with a safe default (empty list, 30 s timeout).
+- **`config.yaml`** — `execution` section with `allowed_commands: [pytest, python, pip, git]` and `timeout_seconds: 30`. System prompt updated to mention shell, git, and test capabilities.
+- **`tests/test_action_tools.py`** — 23 tests covering all five action tools: allowed/disallowed commands, workspace cwd guards, timeout, git status/diff/commit on a fresh repo, pytest execution, `build_action_tool_map`, and `build_tool_map` integration (file + action tools combined).
+
+### Changed — Phase 2
+
+- **`src/agent/schemas.py`** — `ALL_TOOLS` list renamed to `FILE_TOOLS`; `ALL_TOOLS` now combines `FILE_TOOLS + ACTION_TOOLS` so the LLM sees every available tool.
+- **`src/agent/tools.py`** — `build_tool_map()` accepts optional `allowed_commands`, `workspace`, and `command_timeout` params. When provided, action tools are merged into the returned map.
+- **`src/agent/loop.py`** — `AgentLoop.__init__` passes `execution.allowed_commands`, `workspace`, and `execution.timeout_seconds` to `build_tool_map`. Startup log includes the new values.
+- **`src/runner.py`** — Config-loaded log lines in `_build_loop` and `run_repl` extended to include `allowed_commands` and `timeout`.
+- **`tests/conftest.py`** — `minimal_config_dict` includes an `execution` section with test-safe defaults.
+
 ### Added
 
 - **`src/agent/schemas.py`** — New module containing all five OpenAI function-calling schema dicts (`ALL_TOOLS`). Extracted from `tools.py` to keep both files under the 200-line limit. `ALL_TOOLS` is re-exported from `tools.py` via a `noqa: F401` import so all existing callers are unaffected.
