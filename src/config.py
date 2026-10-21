@@ -58,12 +58,18 @@ class LoggingConfig(BaseModel):
     max_size_kb: int = 100
 
 
+class ExecutionConfig(BaseModel):
+    allowed_commands: List[str] = Field(default_factory=list)
+    timeout_seconds: int = 30
+
+
 class AppConfig(BaseModel):
     llm: LLMConfig
     agent: AgentConfig
     memory: MemoryConfig
     file_access: FileAccessConfig
     logging: LoggingConfig
+    execution: ExecutionConfig = Field(default_factory=ExecutionConfig)
     # Resolved at load time from the --workspace flag (or cwd fallback).
     # Not read from config.yaml — set by load_config().
     workspace: Path = Field(default_factory=Path.cwd, exclude=True)
