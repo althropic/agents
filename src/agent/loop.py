@@ -33,14 +33,20 @@ class AgentLoop:
         self._tool_map = build_tool_map(
             allowed_roots=config.resolved_roots(),
             max_size_kb=config.agent.max_file_size_kb,
+            allowed_commands=config.execution.allowed_commands,
+            workspace=config.workspace,
+            command_timeout=config.execution.timeout_seconds,
         )
         logger.info(
-            "AgentLoop ready: model=%s base_url=%s max_iter=%d workspace=%s roots=%s",
+            "AgentLoop ready: model=%s base_url=%s max_iter=%d workspace=%s roots=%s "
+            "allowed_commands=%s timeout=%ds",
             config.llm.model,
             config.llm.base_url,
             config.agent.max_iterations,
             config.workspace,
             config.resolved_roots(),
+            config.execution.allowed_commands,
+            config.execution.timeout_seconds,
         )
 
     # ------------------------------------------------------------------
