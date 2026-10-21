@@ -1,15 +1,18 @@
 """
-OpenAI function-calling schemas for all file tools.
+OpenAI function-calling schemas for all agent tools.
 
-Kept separate from tools.py so neither file exceeds the 200-line limit.
-Import ALL_TOOLS into the agent loop; import individual entries for tests.
+File tool schemas are defined here as FILE_TOOLS.
+Action tool schemas (shell, git, tests) live in action_schemas.py.
+ALL_TOOLS combines both lists for the agent loop.
 """
 
 from __future__ import annotations
 
 from typing import Any, Dict, List
 
-ALL_TOOLS: List[Dict[str, Any]] = [
+from src.agent.action_schemas import ACTION_TOOLS
+
+FILE_TOOLS: List[Dict[str, Any]] = [
     {
         "type": "function",
         "function": {
