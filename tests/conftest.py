@@ -43,6 +43,10 @@ def minimal_config_dict() -> dict:
             "log_dir": "logs",
             "max_size_kb": 100,
         },
+        "execution": {
+            "allowed_commands": ["pytest", "python", "git", "echo"],
+            "timeout_seconds": 10,
+        },
     }
 
 
