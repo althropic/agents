@@ -58,7 +58,8 @@ def _build_loop(workspace: Path):
     apply_log_level(cfg.logging.level)
     logger.info(
         "Config loaded: model=%s base_url=%s max_tokens=%d thinking_budget=%d "
-        "max_iter=%d max_file_kb=%d memory_persist=%s log_level=%s workspace=%s",
+        "max_iter=%d max_file_kb=%d memory_persist=%s log_level=%s "
+        "allowed_commands=%s timeout=%ds workspace=%s",
         cfg.llm.model,
         cfg.llm.base_url,
         cfg.llm.max_tokens,
@@ -67,6 +68,8 @@ def _build_loop(workspace: Path):
         cfg.agent.max_file_size_kb,
         cfg.memory.persist,
         cfg.logging.level,
+        cfg.execution.allowed_commands,
+        cfg.execution.timeout_seconds,
         cfg.workspace,
     )
     return AgentLoop(cfg)
@@ -89,7 +92,8 @@ def run_repl(workspace: Path) -> None:
     apply_log_level(cfg.logging.level)
     logger.info(
         "Config loaded: model=%s base_url=%s max_tokens=%d thinking_budget=%d "
-        "max_iter=%d max_file_kb=%d memory_persist=%s log_level=%s workspace=%s",
+        "max_iter=%d max_file_kb=%d memory_persist=%s log_level=%s "
+        "allowed_commands=%s timeout=%ds workspace=%s",
         cfg.llm.model,
         cfg.llm.base_url,
         cfg.llm.max_tokens,
@@ -98,6 +102,8 @@ def run_repl(workspace: Path) -> None:
         cfg.agent.max_file_size_kb,
         cfg.memory.persist,
         cfg.logging.level,
+        cfg.execution.allowed_commands,
+        cfg.execution.timeout_seconds,
         cfg.workspace,
     )
 
