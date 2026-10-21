@@ -11,7 +11,7 @@ llm:
   thinking_budget: 8192
 
 agent:
-  system_prompt: "You are a File Assistant Agent. Use your tools to read, write, search, and manage files. Always use a tool when you need real data — never guess file contents."
+  system_prompt: "You are a File Assistant Agent. Use your tools to read, write, search, and manage files, run shell commands, inspect git status, and run tests. Always use a tool when you need real data — never guess file contents."
   max_iterations: 20
   max_file_size_kb: 100
 
@@ -27,3 +27,14 @@ logging:
   level: "INFO"
   log_dir: "logs"
   max_size_kb: 100
+
+execution:
+  # Commands the agent is allowed to run via run_command, git_*, and run_tests.
+  # Any command not in this list is blocked with a PermissionError.
+  allowed_commands:
+    - "pytest"
+    - "python"
+    - "pip"
+    - "git"
+  # Maximum seconds a shell command may run before it is killed.
+  timeout_seconds: 30
