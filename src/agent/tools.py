@@ -133,15 +133,25 @@ def grep(
 def build_tool_map(
     allowed_roots: List[Path],
     max_size_kb: int = 100,
+    allowed_commands: List[str] | None = None,
+    workspace: Path | None = None,
+    command_timeout: int = 30,
 ) -> Dict[str, Any]:
     """
     Return a name → callable mapping with allowed_roots and max_size_kb
     already bound, ready for the agent loop to call directly.
     """
-    return {
+    from src.agent.action_tools import build_action_tool_map  # noqa: PLC0415
+
+    tool_map: Dict[str, Any] = {
         "read_file": lambda path: read_file(path, allowed_roots, max_size_kb),
         "write_file": lambda path, content: write_file(path, content, allowed_roots),
         "list_dir": lambda path: list_dir(path, allowed_roots),
         "search_files": lambda root, pattern: search_files(root, pattern, allowed_roots),
         "grep": lambda path, pattern: grep(path, pattern, allowed_roots, max_size_kb),
     }
+    if allowed_commands and workspace:
+        tool_map.update(
+            build_action_tool_map(allowed_commands, workspace, command_timeout)
+        )
+    return tool_map
