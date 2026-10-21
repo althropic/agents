@@ -92,8 +92,13 @@ scripts\run.bat "summarize src/config.py"
 | List a folder | "what files are in the src/ folder?" |
 | Search for files | "find all markdown files in this project" |
 | Search inside a file | "find every line in tools.py that mentions 'error'" |
+| Run a shell command | "run pytest and show me the results" |
+| Check git status | "what changed since the last commit?" |
+| Show a git diff | "show me the unstaged diff" |
+| Commit changes | "stage everything and commit with message 'fix bug'" |
+| Run tests | "run the test suite" |
 
-The assistant can only access folders listed under `file_access.allowed_roots` in `config.yaml`, resolved relative to the active workspace. Anything outside is blocked.
+The assistant can only access folders listed under `file_access.allowed_roots` in `config.yaml`, resolved relative to the active workspace. Shell, git, and test tools only run commands listed under `execution.allowed_commands`. Anything outside either guard is blocked.
 
 ---
 
@@ -113,6 +118,8 @@ All settings are in `config.yaml`. Open it to change how the assistant behaves.
 | `memory.persist` | `false` | Save the conversation to disk after each session |
 | `memory.export_path` | `.agent_memory` | Where to write saved sessions, relative to `--workspace` |
 | `logging.level` | `INFO` | How much detail to write to the log file |
+| `execution.allowed_commands` | `["pytest", "python", "pip", "git"]` | Commands the agent may run via shell/git/test tools |
+| `execution.timeout_seconds` | `30` | Maximum seconds a shell command may run before being killed |
 
 To use a different API key, create a `.env` file in the project folder:
 
@@ -135,7 +142,7 @@ conda activate ./.conda
 pytest
 ```
 
-The tests don't need a live AI model — they run entirely with a fake one. All 34 should pass in under a second.
+The tests don't need a live AI model — they run entirely with a fake one. All 57 should pass in under 15 seconds.
 
 ---
 
@@ -148,8 +155,10 @@ src/
   logger.py        handles writing to the log file
   runner.py        starts the assistant (interactive or single task)
   agent/
-    schemas.py     OpenAI function-calling schemas for all tools
+    schemas.py     file tool schemas (FILE_TOOLS) + combined ALL_TOOLS
+    action_schemas.py   action tool schemas (shell, git, tests)
     tools.py       the file actions (read, write, list, search)
+    action_tools.py     the action tools (run_command, git, tests)
     loop.py        the main thinking loop
     memory.py      keeps track of the conversation
 tests/             automated checks
