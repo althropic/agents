@@ -172,12 +172,7 @@ class AgentLoop:
         - If the response is a plain text message → return it as the final answer.
         """
         response = self._client.chat.completions.create(
-            model=self._cfg.llm.model,
-            messages=memory.all(),
-            tools=ALL_TOOLS,
-            tool_choice="auto",
-            temperature=self._cfg.llm.temperature,
-            max_tokens=self._cfg.llm.max_tokens,
+            **self._create_kwargs(memory.all())
         )
 
         msg = response.choices[0].message
