@@ -9,6 +9,7 @@ repeats until the model returns a final answer or max_iterations is hit.
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 from typing import Any, Dict, Iterator, Optional
 
 from openai import OpenAI
@@ -90,25 +91,64 @@ class AgentLoop:
         )
 
     def stream(self, user_prompt: str) -> Iterator[str]:
-        """
-        Yield the final answer token-by-token (non-tool turns only).
-        Tool call turns are processed silently; only the final text is streamed.
-        """
+        """Yield the final answer token-by-token (non-tool turns only)."""
         memory = Memory(
             system_prompt=self._cfg.agent.system_prompt,
             persist=self._cfg.memory.persist,
             export_path=str(self._cfg.resolved_memory_export_path()),
         )
-        memory.add({"role": "user", "content": user_prompt})
+        yield from self.stream_with_memory(user_prompt, memory)
 
+    def stream_with_memory(
+        self, user_prompt: str, memory: Memory
+    ) -> Iterator[str]:
+        """
+        Stream the final answer token-by-token using shared *memory*.
+        Tool-call turns are processed silently; only the final text
+        answer is yielded chunk-by-chunk.
+        Raises RuntimeError if max_iterations is exceeded.
+        """
+        memory.add({"role": "user", "content": user_prompt})
         max_iter = self._cfg.agent.max_iterations
         for iteration in range(1, max_iter + 1):
-            answer = self._step(memory, stream_final=True)
-            if answer is not None:
-                memory.maybe_export()
-                yield answer
-                return
-
+            stream = self._client.chat.completions.create(
+                model=self._cfg.llm.model, messages=memory.all(), tools=ALL_TOOLS,
+                tool_choice="auto", temperature=self._cfg.llm.temperature,
+                max_tokens=self._cfg.llm.max_tokens, stream=True,
+            )
+            parts: list[str] = []
+            tc: dict[int, dict] = {}
+            is_tool = False
+            for chunk in stream:
+                d = chunk.choices[0].delta
+                if d.tool_calls:
+                    is_tool = True
+                    for c in d.tool_calls:
+                        if c.index not in tc:
+                            tc[c.index] = {"id": "", "function": {"name": "", "arguments": ""}}
+                        if c.id:
+                            tc[c.index]["id"] = c.id
+                        if c.function and c.function.name:
+                            tc[c.index]["function"]["name"] += c.function.name
+                        if c.function and c.function.arguments:
+                            tc[c.index]["function"]["arguments"] += c.function.arguments
+                if d.content and not is_tool:
+                    parts.append(d.content)
+                    yield d.content
+            if is_tool:
+                calls = [SimpleNamespace(id=tc[i]["id"], function=SimpleNamespace(
+                    name=tc[i]["function"]["name"], arguments=tc[i]["function"]["arguments"]))
+                    for i in sorted(tc)]
+                memory.add({"role": "assistant", "content": None, "tool_calls": [
+                    {"id": c.id, "type": "function",
+                     "function": {"name": c.function.name, "arguments": c.function.arguments}}
+                    for c in calls]})
+                self._dispatch_tools(calls, memory)
+                continue
+            answer = "".join(parts)
+            memory.add({"role": "assistant", "content": answer})
+            memory.maybe_export()
+            return
         memory.maybe_export()
         raise RuntimeError(
             f"Agent did not produce a final answer within {max_iter} iterations."
@@ -118,7 +158,7 @@ class AgentLoop:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _step(self, memory: Memory, stream_final: bool = False) -> Optional[str]:
+    def _step(self, memory: Memory) -> Optional[str]:
         """
         One LLM call.
         - If the response contains tool calls → execute them, append results, return None.
