@@ -112,9 +112,7 @@ class AgentLoop:
         max_iter = self._cfg.agent.max_iterations
         for iteration in range(1, max_iter + 1):
             stream = self._client.chat.completions.create(
-                model=self._cfg.llm.model, messages=memory.all(), tools=ALL_TOOLS,
-                tool_choice="auto", temperature=self._cfg.llm.temperature,
-                max_tokens=self._cfg.llm.max_tokens, stream=True,
+                **self._create_kwargs(memory.all(), stream=True)
             )
             parts: list[str] = []
             tc: dict[int, dict] = {}
@@ -157,6 +155,15 @@ class AgentLoop:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def _create_kwargs(self, messages, stream=False):
+        """Build kwargs for a chat.completions.create call."""
+        kw = dict(model=self._cfg.llm.model, messages=messages, tools=ALL_TOOLS,
+                  tool_choice="auto", temperature=self._cfg.llm.temperature,
+                  max_tokens=self._cfg.llm.max_tokens, stream=stream)
+        if self._cfg.llm.thinking_budget > 0:
+            kw["extra_body"] = {self._cfg.llm.thinking_param: self._cfg.llm.thinking_budget}
+        return kw
 
     def _step(self, memory: Memory) -> Optional[str]:
         """
