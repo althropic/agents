@@ -142,7 +142,7 @@ conda activate ./.conda
 pytest
 ```
 
-The tests don't need a live AI model — they run entirely with a fake one. All 57 should pass in under 15 seconds.
+The tests don't need a live AI model — they run entirely with a fake one. All 62 should pass in under 15 seconds.
 
 ---
 
