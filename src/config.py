@@ -29,6 +29,7 @@ class LLMConfig(BaseModel):
     # Passed as reasoning_effort (or equivalent) to models that support it.
     # Set to 0 to disable.  Ignored by models that do not expose reasoning.
     thinking_budget: int = 0
+    thinking_param: str = "reasoning_effort"
 
     @field_validator("api_key", mode="before")
     @classmethod

@@ -91,3 +91,24 @@ class Memory:
         if self._persist:
             return self.export(label)
         return None
+
+    def export_markdown(self, label: Optional[str] = None) -> Path:
+        """Write the conversation to a markdown file. Returns the path."""
+        self._export_path.mkdir(parents=True, exist_ok=True)
+        name = label or f"session_{int(time.time())}"
+        out = self._export_path / f"{name}.md"
+        lines: List[str] = []
+        for msg in self._messages:
+            role = msg.get("role", "?")
+            content = str(msg.get("content", ""))
+            if role == "system":
+                lines.append(f"## System\n\n{content}\n")
+            elif role == "user":
+                lines.append(f"## User\n\n{content}\n")
+            elif role == "assistant":
+                lines.append(f"## Assistant\n\n{content}\n")
+            elif role == "tool":
+                lines.append(f"## Tool ({msg.get('name', '?')})\n\n```\n{content}\n```\n")
+        out.write_text("\n".join(lines), encoding="utf-8")
+        logger.info("Memory exported as markdown: %s", out)
+        return out
