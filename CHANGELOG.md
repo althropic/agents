@@ -9,6 +9,18 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Added — REPL Slash Commands
+
+- **`src/repl_commands.py`** — New module: REPL slash-command dispatcher. Handles `/think on|off`, `/model <name>`, `/export [label]`, `/help`. Returns `True` on every handled command so the REPL loop knows to skip the LLM call.
+- **`src/agent/memory.py`** — `Memory.export_markdown()`: writes conversation history to a `.md` file with `## Role` headings.
+- **`src/config.py`** — `LLMConfig.thinking_param` field (default `"reasoning_effort"`). Controls the `extra_body` key used to pass `thinking_budget` to the model server. Change to `"thinking"` for Anthropic-style endpoints.
+
+### Changed — REPL Slash Commands
+
+- **`src/agent/loop.py`** — `_create_kwargs()` helper centralises all API call parameters and injects `extra_body` when `thinking_budget > 0`. Both `_step()` and `stream_with_memory()` now use it. `thinking_budget` is finally wired to actual API calls.
+- **`src/runner.py`** — REPL startup banner updated to mention `/help`. Slash commands are intercepted before the LLM call via `repl_commands.is_command()` / `repl_commands.handle()`.
+- **`config.yaml`** — `llm.thinking_param: "reasoning_effort"` added and documented.
+
 ### Added — Streaming REPL
 
 - **`src/agent/loop.py`** — `AgentLoop.stream_with_memory()` method: streams the final answer token-by-token using shared memory. Tool-call turns are processed silently; only the final text turn is yielded chunk-by-chunk. Handles streaming tool call fragment accumulation. `stream()` now delegates to `stream_with_memory()`. Unused `stream_final` parameter removed from `_step()`.
