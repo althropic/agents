@@ -9,6 +9,12 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Added — Streaming REPL
+
+- **`src/agent/loop.py`** — `AgentLoop.stream_with_memory()` method: streams the final answer token-by-token using shared memory. Tool-call turns are processed silently; only the final text turn is yielded chunk-by-chunk. Handles streaming tool call fragment accumulation. `stream()` now delegates to `stream_with_memory()`. Unused `stream_final` parameter removed from `_step()`.
+- **`src/runner.py`** — REPL now calls `stream_with_memory()` instead of `run_with_memory()`. Answers print incrementally as the model generates them, with a newline appended after completion.
+- **`tests/test_streaming.py`** — 5 tests for streaming: single-turn chunk yielding, shared-memory chunk yielding, tool-call-then-streamed-answer, max-iterations `RuntimeError`, empty content handling.
+
 ### Added — Phase 2: Action Tools
 
 - **`src/agent/action_schemas.py`** — New module with OpenAI function-calling schemas for five action tools: `run_command`, `git_status`, `git_diff`, `git_commit`, `run_tests`.
