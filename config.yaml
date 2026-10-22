@@ -9,6 +9,10 @@ llm:
   # to models that support it.  Set to 0 to disable.  Ignored by models
   # that do not support reasoning.
   thinking_budget: 8192
+  # thinking_param: the extra_body key used to pass thinking_budget to the
+  # model server.  "reasoning_effort" works for nemotron/OpenAI-compatible
+  # servers.  Change to "thinking" for Anthropic-style endpoints.
+  thinking_param: "reasoning_effort"
 
 agent:
   system_prompt: "You are a File Assistant Agent. Use your tools to read, write, search, and manage files, run shell commands, inspect git status, and run tests. Always use a tool when you need real data — never guess file contents."
