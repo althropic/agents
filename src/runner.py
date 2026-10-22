@@ -137,11 +137,12 @@ def run_repl(workspace: Path) -> None:
             break
 
         try:
-            answer = loop.run_with_memory(prompt, memory)
-            write_output(answer)
+            for chunk in loop.stream_with_memory(prompt, memory):
+                write_output(chunk)
+            write_output("\n")
         except Exception as exc:  # noqa: BLE001
             logger.error("REPL error: %s", exc, exc_info=True)
-            write_output(f"Error: {exc}")
+            write_output(f"\nError: {exc}")
 
 
 def main() -> None:
