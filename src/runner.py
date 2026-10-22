@@ -19,6 +19,7 @@ from pathlib import Path
 from src.config import load_config
 from src.io import write_output
 from src.logger import apply_log_level, get_logger
+from src import repl_commands
 
 logger = get_logger(__name__)
 
@@ -117,7 +118,7 @@ def run_repl(workspace: Path) -> None:
 
     logger.info("REPL mode started (persistent memory, workspace=%s)", workspace)
     write_output(f"File Assistant Agent — workspace: {workspace}")
-    write_output("Type your request, or 'exit' to quit.\n")
+    write_output("Type your request, or 'exit' to quit. Type /help for commands.\n")
 
     while True:
         try:
@@ -135,6 +136,10 @@ def run_repl(workspace: Path) -> None:
             logger.info("REPL exited by user command")
             memory.maybe_export()
             break
+
+        if repl_commands.is_command(prompt):
+            repl_commands.handle(prompt, cfg, memory)
+            continue
 
         try:
             for chunk in loop.stream_with_memory(prompt, memory):
