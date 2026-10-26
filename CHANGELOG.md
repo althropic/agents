@@ -9,6 +9,12 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Fixed — streaming output fragmentation
+
+- **`src/io.py`** — `write_output()` appended a newline to every call, so each streamed token landed on its own line and answers fragmented mid-word (visible in `logs/output.log`). Added an `end` parameter (default `"\n"`, mirroring `print`); streaming callers pass `end=""` so chunks concatenate into flowing text.
+- **`src/runner.py`** — The REPL streaming loop now writes chunks with `write_output(chunk, end="")` and emits a single trailing newline. Line-based output (banner, errors, slash-command replies) is unchanged.
+- **`tests/test_io.py`** — New file: 4 tests for `write_output()`, including a regression guard that streamed chunks concatenate into one line terminated by a single newline.
+
 ### Fixed — reasoning_effort type mismatch (Ollama 400 error)
 
 - **`src/agent/loop.py`** — `_create_kwargs()` sent the integer `thinking_budget` as the value of `reasoning_effort`, which Ollama rejects (`cannot unmarshal number into ... reasoning_effort of type string`). It now delegates to `LLMConfig.thinking_extra_body()`, which sends a string enum for `reasoning_effort` and an integer budget for Anthropic-style `thinking`.
