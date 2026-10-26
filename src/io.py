@@ -12,7 +12,11 @@ from __future__ import annotations
 import sys
 
 
-def write_output(text: str) -> None:
-    """Write *text* followed by a newline to stdout."""
-    sys.stdout.write(text + "\n")
+def write_output(text: str, end: str = "\n") -> None:
+    """Write *text* to stdout, followed by *end* (a newline by default).
+
+    Streaming callers pass ``end=""`` so chunks concatenate into flowing
+    text instead of each landing on its own line.
+    """
+    sys.stdout.write(text + end)
     sys.stdout.flush()
