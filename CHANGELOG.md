@@ -9,6 +9,16 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Fixed — reasoning_effort type mismatch (Ollama 400 error)
+
+- **`src/agent/loop.py`** — `_create_kwargs()` sent the integer `thinking_budget` as the value of `reasoning_effort`, which Ollama rejects (`cannot unmarshal number into ... reasoning_effort of type string`). It now delegates to `LLMConfig.thinking_extra_body()`, which sends a string enum for `reasoning_effort` and an integer budget for Anthropic-style `thinking`.
+- **`src/config.py`** — Added `LLMConfig.thinking_effort` (`Literal["none","low","medium","high","max"]`, default `"high"`) and a `thinking_extra_body()` helper that selects the correct value and type for the configured `thinking_param`. `reasoning_effort` now always sends a string enum (including `"none"`, which explicitly disables thinking); the Anthropic-style `thinking` path keeps sending the integer `thinking_budget` only when `> 0`.
+- **`src/repl_commands.py`** — `/think on|off` now toggles the right field for the active server: `thinking_effort` (`"none"` ↔ a level) for `reasoning_effort` servers, `thinking_budget` (`0` ↔ restored) for Anthropic-style servers.
+- **`src/runner.py`** — Config-loaded log lines now include `thinking_effort` alongside `thinking_budget`.
+- **`config.yaml`** — `thinking_budget: 8192` replaced with `thinking_effort: "high"` (the Ollama/OpenAI value); `thinking_budget` set to `0` and documented as Anthropic-only. Comments clarify which field pairs with each `thinking_param`.
+- **`tests/test_config.py`** — New file: 6 tests for `LLMConfig.thinking_extra_body()`, including a regression guard that the `reasoning_effort` value is always a string and that `"8192"` is rejected by validation.
+- **`tests/test_repl_commands.py`** — `/think` tests updated for the effort-based path; added `TestThinkBudget` covering the Anthropic-style token-budget path.
+
 ### Added — REPL Slash Commands
 
 - **`src/repl_commands.py`** — New module: REPL slash-command dispatcher. Handles `/think on|off`, `/model <name>`, `/export [label]`, `/help`. Returns `True` on every handled command so the REPL loop knows to skip the LLM call.
