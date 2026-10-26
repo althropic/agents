@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 import yaml
 from dotenv import load_dotenv
@@ -25,9 +25,13 @@ class LLMConfig(BaseModel):
     model: str
     temperature: float = 0.2
     max_tokens: int = 32000
-    # Tokens budgeted for the model's internal reasoning trace.
-    # Passed as reasoning_effort (or equivalent) to models that support it.
-    # Set to 0 to disable.  Ignored by models that do not expose reasoning.
+    # Reasoning depth for Ollama/OpenAI-compatible servers. Sent as the
+    # `reasoning_effort` extra_body key — a string enum, NOT a token count.
+    # "none" disables thinking; "low"/"medium"/"high"/"max" scale it.
+    thinking_effort: Literal["none", "low", "medium", "high", "max"] = "high"
+    # Integer token budget, used only when thinking_param points at an
+    # Anthropic-style key (e.g. "thinking"). 0 disables it. Ignored by the
+    # reasoning_effort path above.
     thinking_budget: int = 0
     thinking_param: str = "reasoning_effort"
 
@@ -36,6 +40,21 @@ class LLMConfig(BaseModel):
     def overlay_env_key(cls, v: str) -> str:
         """Allow LLM_API_KEY in .env to override config.yaml value."""
         return os.getenv("LLM_API_KEY", v)
+
+    def thinking_extra_body(self) -> Optional[dict]:
+        """Build the extra_body dict that carries thinking config to the server.
+
+        - reasoning_effort servers (Ollama/OpenAI): always send a string enum
+          (including "none", which explicitly disables thinking).
+        - Anthropic-style servers (thinking_param != "reasoning_effort"):
+          send the integer token budget only when it is > 0.
+        Returns None when nothing should be sent.
+        """
+        if self.thinking_param == "reasoning_effort":
+            return {"reasoning_effort": self.thinking_effort}
+        if self.thinking_budget > 0:
+            return {self.thinking_param: self.thinking_budget}
+        return None
 
 
 class AgentConfig(BaseModel):
