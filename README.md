@@ -111,7 +111,9 @@ All settings are in `config.yaml`. Open it to change how the assistant behaves.
 | `llm.base_url` | `http://localhost:8080/v1` | Where your AI model server is running |
 | `llm.model` | `nemotron-3-ultra` | Which model to use |
 | `llm.max_tokens` | `32000` | Maximum tokens the model may generate (include reasoning traces) |
-| `llm.thinking_budget` | `8192` | Tokens reserved for the model's internal reasoning trace; `0` to disable |
+| `llm.thinking_effort` | `high` | Reasoning depth for Ollama/OpenAI servers, sent as `reasoning_effort`: `none`/`low`/`medium`/`high`/`max` |
+| `llm.thinking_budget` | `0` | Integer token budget, used only when `thinking_param` is an Anthropic-style key (e.g. `thinking`); `0` to disable |
+| `llm.thinking_param` | `reasoning_effort` | Which `extra_body` key carries thinking config — `reasoning_effort` (Ollama/OpenAI, uses `thinking_effort`) or `thinking` (Anthropic, uses `thinking_budget`) |
 | `agent.max_iterations` | `20` | How many steps the assistant takes before giving up |
 | `agent.max_file_size_kb` | `100` | Files bigger than this (in KB) won't be read |
 | `file_access.allowed_roots` | `["."]` | Folders the assistant can access, relative to `--workspace` |
