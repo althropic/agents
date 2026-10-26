@@ -161,8 +161,9 @@ class AgentLoop:
         kw = dict(model=self._cfg.llm.model, messages=messages, tools=ALL_TOOLS,
                   tool_choice="auto", temperature=self._cfg.llm.temperature,
                   max_tokens=self._cfg.llm.max_tokens, stream=stream)
-        if self._cfg.llm.thinking_budget > 0:
-            kw["extra_body"] = {self._cfg.llm.thinking_param: self._cfg.llm.thinking_budget}
+        extra = self._cfg.llm.thinking_extra_body()
+        if extra:
+            kw["extra_body"] = extra
         return kw
 
     def _step(self, memory: Memory) -> Optional[str]:
