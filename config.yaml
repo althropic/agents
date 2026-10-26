@@ -4,14 +4,19 @@ llm:
   model: "nemotron-3-ultra"
   temperature: 0.2
   max_tokens: 32000
-  # thinking_budget: controls how many tokens the model may spend on its
-  # internal reasoning trace.  Passed as `reasoning_effort` (or equivalent)
-  # to models that support it.  Set to 0 to disable.  Ignored by models
-  # that do not support reasoning.
-  thinking_budget: 8192
-  # thinking_param: the extra_body key used to pass thinking_budget to the
-  # model server.  "reasoning_effort" works for nemotron/OpenAI-compatible
-  # servers.  Change to "thinking" for Anthropic-style endpoints.
+  # thinking_effort: reasoning depth for Ollama/OpenAI-compatible servers.
+  # Sent as the `reasoning_effort` extra_body key — a string enum, not a token
+  # count.  none|low|medium|high|max.  "none" disables thinking.  Ignored by
+  # models that do not expose reasoning.
+  thinking_effort: "high"
+  # thinking_budget: integer token budget, used ONLY when thinking_param is
+  # set to an Anthropic-style key (e.g. "thinking"). 0 disables it. Has no
+  # effect on the reasoning_effort path above.
+  thinking_budget: 0
+  # thinking_param: the extra_body key used to pass thinking config to the
+  # model server.  "reasoning_effort" (default) pairs with thinking_effort for
+  # Ollama/OpenAI.  Change to "thinking" for Anthropic-style endpoints, which
+  # pairs with thinking_budget instead.
   thinking_param: "reasoning_effort"
 
 agent:
