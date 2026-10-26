@@ -65,16 +65,37 @@ def _handle_think(parts: list[str], cfg: AppConfig) -> bool:
     if len(parts) < 2 or parts[1].lower() not in {"on", "off"}:
         write_output("Usage: /think on|off")
         return True
-    if parts[1].lower() == "on":
-        # Restore from config default if it was zeroed, or use 8192 as fallback.
-        budget = cfg.llm.thinking_budget if cfg.llm.thinking_budget > 0 else 8192
-        cfg.llm.thinking_budget = budget
-        write_output(f"Thinking enabled (budget={budget} tokens).")
-        logger.info("/think on: thinking_budget=%d", budget)
-    else:
+    state = parts[1].lower()
+    if cfg.llm.thinking_param == "reasoning_effort":
+        return _set_thinking_effort(state, cfg)
+    return _set_thinking_budget(state, cfg)
+
+
+def _set_thinking_effort(state: str, cfg: AppConfig) -> bool:
+    if state == "off":
+        cfg.llm.thinking_effort = "none"
+        write_output("Thinking disabled.")
+        logger.info("/think off: thinking_effort=none")
+        return True
+    # on: keep the current level, or restore to "high" when disabled.
+    effort = "high" if cfg.llm.thinking_effort == "none" else cfg.llm.thinking_effort
+    cfg.llm.thinking_effort = effort
+    write_output(f"Thinking enabled (effort={effort}).")
+    logger.info("/think on: thinking_effort=%s", effort)
+    return True
+
+
+def _set_thinking_budget(state: str, cfg: AppConfig) -> bool:
+    if state == "off":
         cfg.llm.thinking_budget = 0
         write_output("Thinking disabled.")
         logger.info("/think off: thinking_budget=0")
+        return True
+    # on: keep the current budget, or fall back to 8192 when zeroed.
+    budget = cfg.llm.thinking_budget if cfg.llm.thinking_budget > 0 else 8192
+    cfg.llm.thinking_budget = budget
+    write_output(f"Thinking enabled (budget={budget} tokens).")
+    logger.info("/think on: thinking_budget=%d", budget)
     return True
 
 
