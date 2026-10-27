@@ -196,3 +196,32 @@ class TestUnknownCommand:
             result = repl_commands.handle("/nonexistent", cfg, mem)
         assert result is True
         assert "Unknown" in mock_out.call_args[0][0]
+
+
+# ---------------------------------------------------------------------------
+# /reason
+# ---------------------------------------------------------------------------
+
+class TestReason:
+    def test_reason_on(self, cfg: AppConfig, mem: Memory):
+        cfg.llm.show_reasoning = False
+        with patch("src.repl_commands.write_output"):
+            repl_commands.handle("/reason on", cfg, mem)
+        assert cfg.llm.show_reasoning is True
+
+    def test_reason_off(self, cfg: AppConfig, mem: Memory):
+        cfg.llm.show_reasoning = True
+        with patch("src.repl_commands.write_output"):
+            repl_commands.handle("/reason off", cfg, mem)
+        assert cfg.llm.show_reasoning is False
+
+    def test_reason_missing_arg(self, cfg: AppConfig, mem: Memory):
+        with patch("src.repl_commands.write_output") as mock_out:
+            result = repl_commands.handle("/reason", cfg, mem)
+        assert result is True
+        assert "Usage" in mock_out.call_args[0][0]
+
+    def test_reason_in_help(self, cfg: AppConfig, mem: Memory):
+        with patch("src.repl_commands.write_output") as mock_out:
+            repl_commands.handle("/help", cfg, mem)
+        assert "/reason" in mock_out.call_args[0][0]
