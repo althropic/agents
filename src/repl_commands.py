@@ -4,6 +4,7 @@ REPL slash-command handler.
 Supported commands:
     /think on|off       — enable or disable the reasoning budget
     /model <name>       — switch the active model for this session
+    /reason on|off      — show or hide the model's reasoning trace
     /export [label]     — dump conversation to a markdown file
     /help               — list available commands
 """
@@ -20,7 +21,7 @@ from src.logger import get_logger
 
 logger = get_logger(__name__)
 
-_COMMANDS = "/think  /model  /export  /help"
+_COMMANDS = "/think  /model  /reason  /export  /help"
 
 
 def is_command(prompt: str) -> bool:
@@ -48,6 +49,9 @@ def handle(prompt: str, cfg: AppConfig, memory: Memory) -> bool:
 
     if cmd == "/model":
         return _handle_model(parts, cfg)
+
+    if cmd == "/reason":
+        return _handle_reason(parts, cfg)
 
     if cmd == "/export":
         label = parts[1] if len(parts) > 1 else None
@@ -96,6 +100,18 @@ def _set_thinking_budget(state: str, cfg: AppConfig) -> bool:
     cfg.llm.thinking_budget = budget
     write_output(f"Thinking enabled (budget={budget} tokens).")
     logger.info("/think on: thinking_budget=%d", budget)
+    return True
+
+
+def _handle_reason(parts: list[str], cfg: AppConfig) -> bool:
+    if len(parts) < 2 or parts[1].lower() not in {"on", "off"}:
+        write_output("Usage: /reason on|off")
+        return True
+    show = parts[1].lower() == "on"
+    cfg.llm.show_reasoning = show
+    state = "on" if show else "off"
+    write_output(f"Reasoning trace {state}.")
+    logger.info("/reason %s: show_reasoning=%s", state, show)
     return True
 
 
