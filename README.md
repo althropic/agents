@@ -51,13 +51,26 @@ By default the assistant operates on the current directory. Each prompt you send
 
 ```
 File Assistant Agent — workspace: C:\your\project
-Type your request, or 'exit' to quit.
+Type your request, or 'exit' to quit. Type /help for commands.
 
 >>> list the files in src/
 >>> what does the first one contain?
+>>> /think off
+>>> /reason on
 >>> find all .py files under tests/
+>>> /export my-session
 >>> exit
 ```
+
+**Slash commands** (handled instantly, no model call):
+
+| Command | What it does |
+|---------|-------------|
+| `/think on\|off` | Enable or disable the model's reasoning step |
+| `/reason on\|off` | Show or hide the model's chain-of-thought trace (dimmed, inline) |
+| `/model <name>` | Switch the active model for this session |
+| `/export [label]` | Save the conversation to a markdown file |
+| `/help` | List all available commands |
 
 **Point the assistant at a different directory:**
 
@@ -114,6 +127,7 @@ All settings are in `config.yaml`. Open it to change how the assistant behaves.
 | `llm.thinking_effort` | `high` | Reasoning depth for Ollama/OpenAI servers, sent as `reasoning_effort`: `none`/`low`/`medium`/`high`/`max` |
 | `llm.thinking_budget` | `0` | Integer token budget, used only when `thinking_param` is an Anthropic-style key (e.g. `thinking`); `0` to disable |
 | `llm.thinking_param` | `reasoning_effort` | Which `extra_body` key carries thinking config — `reasoning_effort` (Ollama/OpenAI, uses `thinking_effort`) or `thinking` (Anthropic, uses `thinking_budget`) |
+| `llm.show_reasoning` | `false` | Print the model's chain-of-thought inline (dimmed) as it streams. Toggle live with `/reason on\|off` |
 | `agent.max_iterations` | `20` | How many steps the assistant takes before giving up |
 | `agent.max_file_size_kb` | `100` | Files bigger than this (in KB) won't be read |
 | `file_access.allowed_roots` | `["."]` | Folders the assistant can access, relative to `--workspace` |
@@ -144,7 +158,7 @@ conda activate ./.conda
 pytest
 ```
 
-The tests don't need a live AI model — they run entirely with a fake one. All 62 should pass in under 15 seconds.
+The tests don't need a live AI model — they run entirely with a fake one. All 104 should pass in under 15 seconds.
 
 ---
 
@@ -155,6 +169,7 @@ src/
   config.py        loads and checks settings from config.yaml
   io.py            write_output() — routes all terminal output to stdout
   logger.py        handles writing to the log file
+  repl_commands.py slash-command dispatcher (/think, /reason, /model, /export, /help)
   runner.py        starts the assistant (interactive or single task)
   agent/
     schemas.py     file tool schemas (FILE_TOOLS) + combined ALL_TOOLS
@@ -163,6 +178,7 @@ src/
     action_tools.py     the action tools (run_command, git, tests)
     loop.py        the main thinking loop
     memory.py      keeps track of the conversation
+    reasoning.py   extracts chain-of-thought from streaming deltas
 tests/             automated checks
 logs/              log files (created automatically)
 config.yaml        all your settings
