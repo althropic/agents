@@ -34,6 +34,9 @@ class LLMConfig(BaseModel):
     # reasoning_effort path above.
     thinking_budget: int = 0
     thinking_param: str = "reasoning_effort"
+    # When true, the REPL prints the model's reasoning trace inline (dimmed)
+    # as it streams. Off by default — traces are verbose.
+    show_reasoning: bool = False
 
     @field_validator("api_key", mode="before")
     @classmethod
