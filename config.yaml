@@ -18,6 +18,10 @@ llm:
   # Ollama/OpenAI.  Change to "thinking" for Anthropic-style endpoints, which
   # pairs with thinking_budget instead.
   thinking_param: "reasoning_effort"
+  # show_reasoning: when true, the REPL prints the model's chain-of-thought
+  # inline (dimmed) as it streams. Off by default — traces are verbose.
+  # Toggle at runtime with /reason on|off.
+  show_reasoning: false
 
 agent:
   system_prompt: "You are a File Assistant Agent. Use your tools to read, write, search, and manage files, run shell commands, inspect git status, and run tests. Always use a tool when you need real data — never guess file contents."
