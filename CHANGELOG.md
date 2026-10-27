@@ -9,6 +9,10 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Docs
+
+- **`README.md`** — Added slash commands reference table (`/think`, `/reason`, `/model`, `/export`, `/help`); added `llm.show_reasoning` to the settings table; corrected test count (62 → 104); added `repl_commands.py` and `reasoning.py` to the project layout.
+
 ### Added — Reasoning Trace in REPL
 
 - **`src/agent/reasoning.py`** — New module: `extract_reasoning(delta)` probes a streaming delta for chain-of-thought text across the field names used by different servers: `reasoning` (Ollama's `/v1` layer), `reasoning_content`, and `thinking` (native Ollama API). Returns the first non-empty match, or `None`.
