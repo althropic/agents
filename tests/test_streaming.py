@@ -175,3 +175,51 @@ class TestStreamEmptyContent:
             result = list(loop.stream("Say nothing"))
 
         assert result == []
+
+# ---------------------------------------------------------------------------
+# Test: reasoning trace passed to on_reasoning callback
+# ---------------------------------------------------------------------------
+
+class TestStreamReasoning:
+    def test_reasoning_chunks_routed_to_callback(self, agent_config: AppConfig):
+        from types import SimpleNamespace as NS
+
+        def _chunk(content=None, reasoning=None):
+            delta = NS(content=content, reasoning=reasoning,
+                       reasoning_content=None, thinking=None, tool_calls=None)
+            return NS(choices=[NS(delta=delta, finish_reason=None)])
+
+        chunks = [
+            _chunk(reasoning="step 1"),
+            _chunk(reasoning=" step 2"),
+            _chunk(content="Answer."),
+        ]
+        collected: list[str] = []
+
+        with patch("src.agent.loop.OpenAI") as MockOpenAI:
+            MockOpenAI.return_value.chat.completions.create.return_value = iter(chunks)
+            loop = AgentLoop(agent_config)
+            result = list(loop.stream_with_memory(
+                "q", Memory(system_prompt="s"), on_reasoning=collected.append
+            ))
+
+        assert result == ["Answer."]
+        assert collected == ["step 1", " step 2"]
+
+    def test_no_callback_does_not_raise(self, agent_config: AppConfig):
+        from types import SimpleNamespace as NS
+
+        def _chunk(content=None, reasoning=None):
+            delta = NS(content=content, reasoning=reasoning,
+                       reasoning_content=None, thinking=None, tool_calls=None)
+            return NS(choices=[NS(delta=delta, finish_reason=None)])
+
+        chunks = [_chunk(reasoning="thought"), _chunk(content="Done.")]
+
+        with patch("src.agent.loop.OpenAI") as MockOpenAI:
+            MockOpenAI.return_value.chat.completions.create.return_value = iter(chunks)
+            loop = AgentLoop(agent_config)
+            # on_reasoning defaults to None — must not raise
+            result = list(loop.stream_with_memory("q", Memory(system_prompt="s")))
+
+        assert result == ["Done."]
