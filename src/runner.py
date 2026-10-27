@@ -24,6 +24,17 @@ from src import repl_commands
 logger = get_logger(__name__)
 
 
+def _reasoning_writer(show: bool):
+    """Return a callback that renders reasoning trace dimmed, or None when off."""
+    if not show:
+        return None
+
+    def _write(text: str) -> None:
+        write_output(f"\x1b[2m{text}\x1b[0m", end="")
+
+    return _write
+
+
 def _parse_args() -> tuple[Path, list[str]]:
     """Parse CLI args; return (workspace_path, remaining_prompt_tokens)."""
     parser = argparse.ArgumentParser(
