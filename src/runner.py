@@ -155,7 +155,10 @@ def run_repl(workspace: Path) -> None:
             continue
 
         try:
-            for chunk in loop.stream_with_memory(prompt, memory):
+            on_reasoning = _reasoning_writer(cfg.llm.show_reasoning)
+            for chunk in loop.stream_with_memory(
+                prompt, memory, on_reasoning=on_reasoning
+            ):
                 write_output(chunk, end="")
             write_output("\n")
         except Exception as exc:  # noqa: BLE001
