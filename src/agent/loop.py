@@ -15,6 +15,7 @@ from typing import Any, Dict, Iterator, Optional
 from openai import OpenAI
 
 from src.agent.memory import Memory
+from src.agent.reasoning import extract_reasoning
 from src.agent.tools import ALL_TOOLS, build_tool_map
 from src.config import AppConfig
 from src.logger import get_logger
@@ -100,12 +101,14 @@ class AgentLoop:
         yield from self.stream_with_memory(user_prompt, memory)
 
     def stream_with_memory(
-        self, user_prompt: str, memory: Memory
+        self, user_prompt: str, memory: Memory, on_reasoning=None
     ) -> Iterator[str]:
         """
         Stream the final answer token-by-token using shared *memory*.
         Tool-call turns are processed silently; only the final text
         answer is yielded chunk-by-chunk.
+        Reasoning-trace chunks, if any, are passed to *on_reasoning* (not
+        yielded) so a caller can surface them without storing them.
         Raises RuntimeError if max_iterations is exceeded.
         """
         memory.add({"role": "user", "content": user_prompt})
@@ -133,6 +136,9 @@ class AgentLoop:
                 if d.content and not is_tool:
                     parts.append(d.content)
                     yield d.content
+                rs = extract_reasoning(d)
+                if rs and on_reasoning is not None:
+                    on_reasoning(rs)
             if is_tool:
                 calls = [SimpleNamespace(id=tc[i]["id"], function=SimpleNamespace(
                     name=tc[i]["function"]["name"], arguments=tc[i]["function"]["arguments"]))
@@ -151,10 +157,6 @@ class AgentLoop:
         raise RuntimeError(
             f"Agent did not produce a final answer within {max_iter} iterations."
         )
-
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
 
     def _create_kwargs(self, messages, stream=False):
         """Build kwargs for a chat.completions.create call."""
