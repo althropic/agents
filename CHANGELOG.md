@@ -9,6 +9,18 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Added — Reasoning Trace in REPL
+
+- **`src/agent/reasoning.py`** — New module: `extract_reasoning(delta)` probes a streaming delta for chain-of-thought text across the field names used by different servers: `reasoning` (Ollama's `/v1` layer), `reasoning_content`, and `thinking` (native Ollama API). Returns the first non-empty match, or `None`.
+- **`src/agent/loop.py`** — `stream_with_memory()` gains an optional `on_reasoning` callback. Reasoning chunks are passed to it without being yielded as answer content, so callers can surface or discard traces independently of the main answer stream.
+- **`src/config.py`** — `LLMConfig.show_reasoning: bool = False`. Controls whether the REPL prints the model's chain-of-thought. Off by default — traces are verbose. Toggle at runtime with `/reason on|off`.
+- **`src/runner.py`** — `_reasoning_writer(show)` returns a dimmed-ANSI callback (`\x1b[2m…\x1b[0m`) when `show=True`, or `None` when off. The REPL streaming loop creates this writer per-prompt and passes it into `stream_with_memory()`.
+- **`src/repl_commands.py`** — `/reason on|off` slash command: toggles `cfg.llm.show_reasoning`. Registered in `_COMMANDS` and `/help` output.
+- **`config.yaml`** — `llm.show_reasoning: false` added with inline documentation.
+- **`tests/test_reasoning.py`** — New file: 7 tests for `extract_reasoning()` covering all three field names, precedence, and empty-string handling.
+- **`tests/test_streaming.py`** — 2 new tests: reasoning chunks routed to callback; `on_reasoning=None` does not raise.
+- **`tests/test_repl_commands.py`** — 4 new tests for `/reason on|off`, missing arg, and `/help` output.
+
 ### Fixed — streaming output fragmentation
 
 - **`src/io.py`** — `write_output()` appended a newline to every call, so each streamed token landed on its own line and answers fragmented mid-word (visible in `logs/output.log`). Added an `end` parameter (default `"\n"`, mirroring `print`); streaming callers pass `end=""` so chunks concatenate into flowing text.
