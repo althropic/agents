@@ -16,6 +16,7 @@ temp/
 # Project-specific ignores
 scripts/run.bat
 .rules
+assets/
 
 # Python
 __pycache__/
