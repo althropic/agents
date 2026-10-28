@@ -15,9 +15,16 @@ _REASONING_FIELDS = ("reasoning", "reasoning_content", "thinking")
 
 
 def extract_reasoning(delta) -> str | None:
-    """Return the reasoning text on a streaming *delta*, or None."""
+    """Return the reasoning text on a streaming *delta*, or None.
+
+    The OpenAI SDK only deserialises known fields, so non-standard fields
+    (e.g. Ollama's ``reasoning``) arrive in ``delta.model_extra``.  We
+    check there first, then fall back to getattr for SDK versions that do
+    expose these fields natively.
+    """
+    extra: dict = getattr(delta, "model_extra", None) or {}
     for field in _REASONING_FIELDS:
-        val = getattr(delta, field, None)
+        val = extra.get(field) or getattr(delta, field, None)
         if val:
             return val
     return None
