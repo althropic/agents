@@ -47,6 +47,11 @@ def minimal_config_dict() -> dict:
             "allowed_commands": ["pytest", "python", "git", "echo"],
             "timeout_seconds": 10,
         },
+        "web_fetch": {
+            "enabled": False,
+            "max_response_kb": 100,
+            "timeout_seconds": 15,
+        },
     }
 
 
