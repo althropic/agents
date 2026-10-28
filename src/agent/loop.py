@@ -38,17 +38,16 @@ class AgentLoop:
             allowed_commands=config.execution.allowed_commands,
             workspace=config.workspace,
             command_timeout=config.execution.timeout_seconds,
+            web_fetch_enabled=config.web_fetch.enabled,
+            web_fetch_max_kb=config.web_fetch.max_response_kb,
+            web_fetch_timeout=config.web_fetch.timeout_seconds,
         )
         logger.info(
-            "AgentLoop ready: model=%s base_url=%s max_iter=%d workspace=%s roots=%s "
-            "allowed_commands=%s timeout=%ds",
+            "AgentLoop ready: model=%s max_iter=%d workspace=%s web_fetch=%s",
             config.llm.model,
-            config.llm.base_url,
             config.agent.max_iterations,
             config.workspace,
-            config.resolved_roots(),
-            config.execution.allowed_commands,
-            config.execution.timeout_seconds,
+            config.web_fetch.enabled,
         )
 
     # ------------------------------------------------------------------
