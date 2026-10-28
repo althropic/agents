@@ -136,12 +136,16 @@ def build_tool_map(
     allowed_commands: List[str] | None = None,
     workspace: Path | None = None,
     command_timeout: int = 30,
+    web_fetch_enabled: bool = False,
+    web_fetch_max_kb: int = 100,
+    web_fetch_timeout: int = 15,
 ) -> Dict[str, Any]:
     """
     Return a name → callable mapping with allowed_roots and max_size_kb
     already bound, ready for the agent loop to call directly.
     """
     from src.agent.action_tools import build_action_tool_map  # noqa: PLC0415
+    from src.agent.web_tools import build_web_tool_map  # noqa: PLC0415
 
     tool_map: Dict[str, Any] = {
         "read_file": lambda path: read_file(path, allowed_roots, max_size_kb),
@@ -154,4 +158,6 @@ def build_tool_map(
         tool_map.update(
             build_action_tool_map(allowed_commands, workspace, command_timeout)
         )
+    if web_fetch_enabled:
+        tool_map.update(build_web_tool_map(web_fetch_max_kb, web_fetch_timeout))
     return tool_map
