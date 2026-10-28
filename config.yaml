@@ -51,3 +51,12 @@ execution:
     - "git"
   # Maximum seconds a shell command may run before it is killed.
   timeout_seconds: 30
+
+web_fetch:
+  # Set enabled: true to allow the agent to fetch public URLs.
+  # Disabled by default — opt in when you need live documentation or API specs.
+  enabled: false
+  # Maximum response size in KB. Responses larger than this are rejected.
+  max_response_kb: 100
+  # Request timeout in seconds.
+  timeout_seconds: 15
