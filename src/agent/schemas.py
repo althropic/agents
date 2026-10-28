@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Any, Dict, List
 
 from src.agent.action_schemas import ACTION_TOOLS
+from src.agent.web_schemas import WEB_TOOLS
 
 FILE_TOOLS: List[Dict[str, Any]] = [
     {
@@ -119,4 +120,4 @@ FILE_TOOLS: List[Dict[str, Any]] = [
 ]
 
 # Combined list sent to the LLM so it knows every available tool.
-ALL_TOOLS: List[Dict[str, Any]] = FILE_TOOLS + ACTION_TOOLS
+ALL_TOOLS: List[Dict[str, Any]] = FILE_TOOLS + ACTION_TOOLS + WEB_TOOLS
