@@ -1,14 +1,15 @@
 # File Assistant Agent
 
-An AI assistant that works with files on your computer. Ask it in plain English — it figures out what to do.
+An AI assistant that works with your codebase in plain English. Ask it to read files, run tests, commit changes, explain code, or search across your project — it figures out what to do and shows its work.
 
 ```
 >>> summarize src/config.py
+>>> run the tests and tell me what failed
+>>> what changed since the last commit?
 >>> find all Python files under tests/
->>> read src/agent/loop.py and explain what it does
 ```
 
-No internet connection needed. It runs entirely on your machine using a local AI model.
+Runs entirely on your machine using a local AI model. No internet connection, no data leaving your computer.
 
 ---
 
@@ -17,8 +18,25 @@ No internet connection needed. It runs entirely on your machine using a local AI
 You'll need:
 
 - [Miniconda](https://docs.conda.io/en/latest/miniconda.html) — manages the Python environment
-- A local AI model server running at `http://localhost:8080/v1` (e.g. [Ollama](https://ollama.com), vLLM, or llama.cpp)
+- [Ollama](https://ollama.com) — runs the AI model locally (vLLM or llama.cpp also work)
 - Python 3.11
+
+**Start Ollama and pull the model (one time):**
+
+```bash
+ollama serve
+ollama pull nemotron-mini
+```
+
+Then update `config.yaml` to point at Ollama's port:
+
+```yaml
+llm:
+  base_url: "http://localhost:11434/v1"
+  model: "nemotron-mini"
+```
+
+> The default config points at port `8080`. Ollama runs on `11434` unless you've configured it otherwise.
 
 ---
 
