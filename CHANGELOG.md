@@ -9,6 +9,10 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Fixed — reasoning trace not visible in REPL
+
+- **`src/agent/reasoning.py`** — `extract_reasoning()` was reading reasoning fields via `getattr` on the SDK delta object. The OpenAI Python SDK only deserialises known fields; non-standard fields like Ollama's `reasoning` arrive in `delta.model_extra` and are silently dropped before `getattr` sees them. Fix: check `model_extra` first, then fall back to `getattr` for SDK versions that do expose these fields natively. `/reason on` now correctly surfaces the dimmed thinking trace in the REPL.
+
 ### Docs
 
 - **`README.md`** — Added slash commands reference table (`/think`, `/reason`, `/model`, `/export`, `/help`); added `llm.show_reasoning` to the settings table; corrected test count (62 → 104); added `repl_commands.py` and `reasoning.py` to the project layout.
