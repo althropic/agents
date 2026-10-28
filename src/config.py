@@ -86,6 +86,12 @@ class ExecutionConfig(BaseModel):
     timeout_seconds: int = 30
 
 
+class WebFetchConfig(BaseModel):
+    enabled: bool = False
+    max_response_kb: int = 100
+    timeout_seconds: int = 15
+
+
 class AppConfig(BaseModel):
     llm: LLMConfig
     agent: AgentConfig
@@ -93,6 +99,7 @@ class AppConfig(BaseModel):
     file_access: FileAccessConfig
     logging: LoggingConfig
     execution: ExecutionConfig = Field(default_factory=ExecutionConfig)
+    web_fetch: WebFetchConfig = Field(default_factory=WebFetchConfig)
     # Resolved at load time from the --workspace flag (or cwd fallback).
     # Not read from config.yaml — set by load_config().
     workspace: Path = Field(default_factory=Path.cwd, exclude=True)
