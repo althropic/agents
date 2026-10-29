@@ -198,3 +198,64 @@ class TestBuildToolMap:
         tool_map = build_tool_map(_roots(tmp_workspace))
         result = tool_map["list_dir"](path=str(tmp_workspace))
         assert "hello.txt" in result
+
+
+# ---------------------------------------------------------------------------
+# Fix 6 — workspace-anchored relative path resolution
+# ---------------------------------------------------------------------------
+
+class TestWorkspaceAnchoredPaths:
+    def test_relative_path_resolves_against_workspace(self, tmp_workspace: Path):
+        """Relative paths must resolve against workspace, not os.getcwd()."""
+        roots = _roots(tmp_workspace)
+        # "hello.txt" is relative — should resolve to tmp_workspace/hello.txt
+        result = read_file("hello.txt", roots, workspace=tmp_workspace)
+        assert result == "Hello, world!"
+
+    def test_relative_path_in_subdir(self, tmp_workspace: Path):
+        roots = _roots(tmp_workspace)
+        result = read_file("subdir/nested.txt", roots, workspace=tmp_workspace)
+        assert result == "Nested content."
+
+    def test_absolute_path_unchanged(self, tmp_workspace: Path):
+        roots = _roots(tmp_workspace)
+        abs_path = str(tmp_workspace / "hello.txt")
+        result = read_file(abs_path, roots, workspace=tmp_workspace)
+        assert result == "Hello, world!"
+
+    def test_list_dir_relative(self, tmp_workspace: Path):
+        roots = _roots(tmp_workspace)
+        result = list_dir(".", roots, workspace=tmp_workspace)
+        assert "hello.txt" in result
+
+    def test_write_file_relative(self, tmp_workspace: Path):
+        roots = _roots(tmp_workspace)
+        write_file("newfile.txt", "new content", roots, workspace=tmp_workspace)
+        assert (tmp_workspace / "newfile.txt").read_text(encoding="utf-8") == "new content"
+
+    def test_grep_relative(self, tmp_workspace: Path):
+        roots = _roots(tmp_workspace)
+        result = grep("hello.txt", "world", roots, workspace=tmp_workspace)
+        assert "Hello, world!" in result
+
+    def test_search_files_relative(self, tmp_workspace: Path):
+        roots = _roots(tmp_workspace)
+        result = search_files(".", "*.txt", roots, workspace=tmp_workspace)
+        assert "hello.txt" in result
+
+    def test_build_tool_map_with_workspace(self, tmp_workspace: Path):
+        """build_tool_map passes workspace through to all tools."""
+        roots = _roots(tmp_workspace)
+        tool_map = build_tool_map(roots, workspace=tmp_workspace)
+        result = tool_map["read_file"](path="hello.txt")
+        assert result == "Hello, world!"
+
+    def test_multi_workspace_allows_both_roots(self, tmp_workspace: Path, tmp_path: Path):
+        """Two workspace roots — agent can access files in either."""
+        second = tmp_path / "second_project"
+        second.mkdir()
+        (second / "other.txt").write_text("from second", encoding="utf-8")
+
+        roots = [tmp_workspace.resolve(), second.resolve()]
+        result = read_file(str(second / "other.txt"), roots, workspace=tmp_workspace)
+        assert result == "from second"
