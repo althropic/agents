@@ -21,7 +21,7 @@ from src.logger import get_logger
 
 logger = get_logger(__name__)
 
-_COMMANDS = "/think  /model  /reason  /export  /help"
+_COMMANDS = "/think  /model  /reason  /export  /goal  /help"
 
 
 def is_command(prompt: str) -> bool:
@@ -56,6 +56,10 @@ def handle(prompt: str, cfg: AppConfig, memory: Memory) -> bool:
     if cmd == "/export":
         label = parts[1] if len(parts) > 1 else None
         return _handle_export(memory, cfg, label)
+
+    if cmd == "/goal":
+        goal = prompt[len("/goal"):].strip()
+        return _handle_goal(goal, cfg, memory)
 
     write_output(f"Unknown command '{cmd}'. Available: {_COMMANDS}")
     return True
