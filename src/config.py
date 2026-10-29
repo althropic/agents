@@ -62,6 +62,11 @@ class LLMConfig(BaseModel):
 
 class AgentConfig(BaseModel):
     system_prompt: str
+    planner_prompt: str = (
+        "You are a planning assistant. When given a goal, respond with ONLY a "
+        "JSON array of short task descriptions (strings) in the order they should "
+        "be executed. No markdown fences, no explanation — just the JSON array."
+    )
     max_iterations: int = 20
     max_file_size_kb: int = 100
 
