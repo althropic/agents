@@ -141,3 +141,22 @@ def _handle_export(
     write_output(f"Session exported → {out}")
     logger.info("/export: wrote %s", out)
     return True
+
+
+def _handle_goal(goal: str, cfg: AppConfig, memory: Memory) -> bool:
+    """Run a goal through the structured task queue."""
+    if not goal:
+        write_output("Usage: /goal <description of what you want to achieve>")
+        return True
+    from src.agent.loop import AgentLoop  # noqa: PLC0415
+    from src.task_queue import TaskQueue  # noqa: PLC0415
+
+    loop = AgentLoop(cfg)
+    queue = TaskQueue(loop, cfg)
+    try:
+        for event in queue.run(goal, memory):
+            write_output(event, end="")
+    except Exception as exc:  # noqa: BLE001
+        logger.error("/goal failed: %s", exc, exc_info=True)
+        write_output(f"\nError: {exc}")
+    return True
