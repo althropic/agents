@@ -132,7 +132,7 @@ def run_repl(workspaces: list[Path]) -> None:
         cfg.logging.level,
         cfg.execution.allowed_commands,
         cfg.execution.timeout_seconds,
-        cfg.workspace,
+        workspaces,
     )
 
     loop = AgentLoop(cfg)
@@ -143,8 +143,9 @@ def run_repl(workspaces: list[Path]) -> None:
         export_path=str(cfg.resolved_memory_export_path()),
     )
 
-    logger.info("REPL mode started (persistent memory, workspace=%s)", workspace)
-    write_output(f"File Assistant Agent — workspace: {workspace}")
+    logger.info("REPL mode started (persistent memory, workspaces=%s)", workspaces)
+    workspace_display = ", ".join(str(w) for w in workspaces)
+    write_output(f"File Assistant Agent — workspace: {workspace_display}")
     write_output("Type your request, or 'exit' to quit. Type /help for commands.\n")
 
     while True:
@@ -181,11 +182,11 @@ def run_repl(workspaces: list[Path]) -> None:
 
 
 def main() -> None:
-    workspace, prompt_tokens = _parse_args()
+    workspaces, prompt_tokens = _parse_args()
     if prompt_tokens:
-        run_once(" ".join(prompt_tokens), workspace)
+        run_once(" ".join(prompt_tokens), workspaces)
     else:
-        run_repl(workspace)
+        run_repl(workspaces)
 
 
 if __name__ == "__main__":
