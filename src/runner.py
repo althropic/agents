@@ -35,8 +35,8 @@ def _reasoning_writer(show: bool):
     return _write
 
 
-def _parse_args() -> tuple[Path, list[str]]:
-    """Parse CLI args; return (workspace_path, remaining_prompt_tokens)."""
+def _parse_args() -> tuple[list[Path], list[str]]:
+    """Parse CLI args; return (workspace_paths, remaining_prompt_tokens)."""
     parser = argparse.ArgumentParser(
         prog="src.runner",
         description="File Assistant Agent",
@@ -45,9 +45,11 @@ def _parse_args() -> tuple[Path, list[str]]:
     parser.add_argument(
         "--workspace",
         metavar="DIR",
+        action="append",
         default=None,
         help=(
             "Root directory the agent is allowed to read/write. "
+            "Repeat to add multiple workspaces. "
             "Defaults to the current working directory."
         ),
     )
@@ -58,20 +60,29 @@ def _parse_args() -> tuple[Path, list[str]]:
     )
     args = parser.parse_args()
 
-    workspace = Path(args.workspace).resolve() if args.workspace else Path.cwd()
-    return workspace, args.prompt
+    workspaces = (
+        [Path(w).resolve() for w in args.workspace]
+        if args.workspace
+        else [Path.cwd()]
+    )
+    return workspaces, args.prompt
 
 
-def _build_loop(workspace: Path):
-    """Load config anchored to *workspace*, apply log level, return AgentLoop."""
+def _build_loop(workspaces: list[Path]):
+    """Load config anchored to *workspaces[0]*, apply log level, return AgentLoop."""
     from src.agent.loop import AgentLoop  # noqa: PLC0415
 
+    workspace = workspaces[0]
     cfg = load_config(workspace=workspace)
+    # Additional workspaces are merged into allowed_roots so the agent
+    # can read/write across all of them.
+    for extra in workspaces[1:]:
+        cfg.file_access.allowed_roots.append(str(extra))
     apply_log_level(cfg.logging.level)
     logger.info(
         "Config loaded: model=%s base_url=%s max_tokens=%d thinking_effort=%s "
         "thinking_budget=%d max_iter=%d max_file_kb=%d memory_persist=%s log_level=%s "
-        "allowed_commands=%s timeout=%ds workspace=%s",
+        "allowed_commands=%s timeout=%ds workspaces=%s",
         cfg.llm.model,
         cfg.llm.base_url,
         cfg.llm.max_tokens,
@@ -83,30 +94,33 @@ def _build_loop(workspace: Path):
         cfg.logging.level,
         cfg.execution.allowed_commands,
         cfg.execution.timeout_seconds,
-        cfg.workspace,
+        workspaces,
     )
     return AgentLoop(cfg)
 
 
-def run_once(prompt: str, workspace: Path) -> None:
+def run_once(prompt: str, workspaces: list[Path]) -> None:
     """Run a single prompt and print the result."""
-    loop = _build_loop(workspace)
-    logger.info("Single-shot mode: prompt=%r workspace=%s", prompt[:120], workspace)
+    loop = _build_loop(workspaces)
+    logger.info("Single-shot mode: prompt=%r workspaces=%s", prompt[:120], workspaces)
     answer = loop.run(prompt)
     write_output(answer)
 
 
-def run_repl(workspace: Path) -> None:
+def run_repl(workspaces: list[Path]) -> None:
     """Interactive REPL — memory persists across turns within the session."""
     from src.agent.loop import AgentLoop  # noqa: PLC0415
     from src.agent.memory import Memory   # noqa: PLC0415
 
+    workspace = workspaces[0]
     cfg = load_config(workspace=workspace)
+    for extra in workspaces[1:]:
+        cfg.file_access.allowed_roots.append(str(extra))
     apply_log_level(cfg.logging.level)
     logger.info(
         "Config loaded: model=%s base_url=%s max_tokens=%d thinking_effort=%s "
         "thinking_budget=%d max_iter=%d max_file_kb=%d memory_persist=%s log_level=%s "
-        "allowed_commands=%s timeout=%ds workspace=%s",
+        "allowed_commands=%s timeout=%ds workspaces=%s",
         cfg.llm.model,
         cfg.llm.base_url,
         cfg.llm.max_tokens,
