@@ -111,10 +111,11 @@ def search_files(
     root: str,
     pattern: str,
     allowed_roots: List[Path],
+    workspace: Optional[Path] = None,
 ) -> str:
     """Recursively find files whose names match glob *pattern* under *root*."""
     logger.debug("search_files: root=%s pattern=%s", root, pattern)
-    target = _resolve_and_check(root, allowed_roots)
+    target = _resolve_and_check(root, allowed_roots, workspace=workspace)
     if not target.is_dir():
         raise NotADirectoryError(f"'{target}' is not a directory.")
     matches = sorted(target.rglob(pattern))
@@ -129,10 +130,11 @@ def grep(
     pattern: str,
     allowed_roots: List[Path],
     max_size_kb: int = 100,
+    workspace: Optional[Path] = None,
 ) -> str:
     """Search for regex *pattern* in *path* and return matching lines with numbers."""
     logger.debug("grep: path=%s pattern=%s", path, pattern)
-    target = _resolve_and_check(path, allowed_roots, max_size_kb, check_size=True)
+    target = _resolve_and_check(path, allowed_roots, max_size_kb, check_size=True, workspace=workspace)
     regex = re.compile(pattern)
     lines = target.read_text(encoding="utf-8").splitlines()
     hits = [
@@ -163,11 +165,11 @@ def build_tool_map(
     from src.agent.web_tools import build_web_tool_map  # noqa: PLC0415
 
     tool_map: Dict[str, Any] = {
-        "read_file": lambda path: read_file(path, allowed_roots, max_size_kb),
-        "write_file": lambda path, content: write_file(path, content, allowed_roots),
-        "list_dir": lambda path: list_dir(path, allowed_roots),
-        "search_files": lambda root, pattern: search_files(root, pattern, allowed_roots),
-        "grep": lambda path, pattern: grep(path, pattern, allowed_roots, max_size_kb),
+        "read_file": lambda path: read_file(path, allowed_roots, max_size_kb, workspace),
+        "write_file": lambda path, content: write_file(path, content, allowed_roots, workspace),
+        "list_dir": lambda path: list_dir(path, allowed_roots, workspace),
+        "search_files": lambda root, pattern: search_files(root, pattern, allowed_roots, workspace),
+        "grep": lambda path, pattern: grep(path, pattern, allowed_roots, max_size_kb, workspace),
     }
     if allowed_commands and workspace:
         tool_map.update(
