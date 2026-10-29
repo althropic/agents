@@ -106,10 +106,16 @@ class AppConfig(BaseModel):
 
     model_config = {"arbitrary_types_allowed": True}
 
-    def resolved_roots(self) -> List[Path]:
-        """Return allowed_roots as absolute Paths anchored to workspace."""
+    def resolved_roots(self, workspace: Optional[Path] = None) -> List[Path]:
+        """Return allowed_roots as absolute Paths anchored to *workspace*.
+
+        When *workspace* is omitted, uses ``self.workspace`` (set at load time).
+        Pass an explicit workspace to resolve roots for a different project
+        without mutating the config object.
+        """
+        anchor = workspace or self.workspace
         return [
-            Path(r).resolve() if Path(r).is_absolute() else (self.workspace / r).resolve()
+            Path(r).resolve() if Path(r).is_absolute() else (anchor / r).resolve()
             for r in self.file_access.allowed_roots
         ]
 
