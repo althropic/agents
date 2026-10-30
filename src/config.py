@@ -97,6 +97,18 @@ class WebFetchConfig(BaseModel):
     timeout_seconds: int = 15
 
 
+class OrchestratorConfig(BaseModel):
+    # Set to true to enable the /orchestrate REPL command.
+    enabled: bool = False
+    # System prompt injected into the routing LLM call that assigns roles.
+    # Leave empty to use the built-in router prompt.
+    router_prompt: str = ""
+    # Override system prompts for individual roles.  Keys must match a known
+    # profile name: researcher | coder | reviewer | tester.  Missing keys
+    # keep the built-in default.
+    role_overrides: dict = Field(default_factory=dict)
+
+
 class AppConfig(BaseModel):
     llm: LLMConfig
     agent: AgentConfig
