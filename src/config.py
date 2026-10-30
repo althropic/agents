@@ -117,6 +117,7 @@ class AppConfig(BaseModel):
     logging: LoggingConfig
     execution: ExecutionConfig = Field(default_factory=ExecutionConfig)
     web_fetch: WebFetchConfig = Field(default_factory=WebFetchConfig)
+    orchestrator: OrchestratorConfig = Field(default_factory=OrchestratorConfig)
     # Resolved at load time from the --workspace flag (or cwd fallback).
     # Not read from config.yaml — set by load_config().
     workspace: Path = Field(default_factory=Path.cwd, exclude=True)
