@@ -9,6 +9,16 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Added — Phase 3 Item 4: Orchestrator + Sub-Agents
+
+- **`src/agent/profiles.py`** — New module: four specialist `AgentProfile` definitions (researcher, coder, reviewer, tester). Each profile carries a system prompt and a restricted `allowed_tools` list. `PROFILES` registry and `get_profile(name)` lookup exposed for external use.
+- **`src/orchestrator_helpers.py`** — New module: `_route_task()` and `_build_scoped_loop()` extracted here to keep `orchestrator.py` under 200 lines. `_route_task` sends a single-token routing call to the LLM and falls back to keyword matching on failure. `_build_scoped_loop` clones config shallowly (Pydantic `model_copy`), restricts the tool map and schema list to the profile's `allowed_tools`, and patches `_create_kwargs` so the model only sees allowed tool definitions.
+- **`src/orchestrator.py`** — New module: `Orchestrator` class. Plans a goal via `TaskQueue`, imports route/scope helpers from `orchestrator_helpers`, iterates tasks with role labels and graceful per-task failure handling, and yields progress strings for REPL streaming.
+- **`src/config.py`** — `OrchestratorConfig` Pydantic model: `enabled: bool`, `router_prompt: str`, `role_overrides: dict`. Added to `AppConfig` with `Field(default_factory=OrchestratorConfig)`.
+- **`config.yaml`** — `orchestrator` section: `enabled: false`, `router_prompt: ""`, `role_overrides: {}`. Inline comments explain each field.
+- **`src/repl_commands.py`** — `/orchestrate <goal>` slash command: guards on `cfg.orchestrator.enabled`, instantiates `Orchestrator`, streams output. `_COMMANDS` and `/help` updated to include `/orchestrate`. `_handle_orchestrate()` extracted as a separate private function following existing conventions.
+- **`tests/test_orchestrator.py`** — 28 new tests covering: `AgentProfile` registry and `get_profile()`, `_route_task()` (LLM response, unknown-role fallback, exception fallback, keyword routing via parametrize), `_build_scoped_loop()` (system-prompt swap, tool-map restriction, config immutability), `Orchestrator.run()` (plan header, all tasks executed, planning failure, task failure, role label in output), and `/orchestrate` slash command (disabled guard, empty goal, handler dispatch, help listing).
+
 ### Fixed — reasoning trace not visible in REPL
 
 - **`src/agent/reasoning.py`** — `extract_reasoning()` was reading reasoning fields via `getattr` on the SDK delta object. The OpenAI Python SDK only deserialises known fields; non-standard fields like Ollama's `reasoning` arrive in `delta.model_extra` and are silently dropped before `getattr` sees them. Fix: check `model_extra` first, then fall back to `getattr` for SDK versions that do expose these fields natively. `/reason on` now correctly surfaces the dimmed thinking trace in the REPL.
