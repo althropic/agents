@@ -64,3 +64,16 @@ web_fetch:
   max_response_kb: 100
   # Request timeout in seconds.
   timeout_seconds: 15
+
+orchestrator:
+  # Set enabled: true to unlock the /orchestrate REPL command.
+  # When enabled, a goal is broken into subtasks and each is routed to the
+  # most appropriate specialist: researcher | coder | reviewer | tester.
+  enabled: false
+  # router_prompt: override the built-in system prompt used to route subtasks
+  # to specialist roles.  Leave empty to use the default.
+  router_prompt: ""
+  # role_overrides: per-role system prompt overrides.  Keys must be one of
+  # researcher | coder | reviewer | tester.  Missing keys keep the built-in
+  # default from src/agent/profiles.py.
+  role_overrides: {}
