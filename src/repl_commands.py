@@ -21,7 +21,7 @@ from src.logger import get_logger
 
 logger = get_logger(__name__)
 
-_COMMANDS = "/think  /model  /reason  /export  /goal  /help"
+_COMMANDS = "/think  /model  /reason  /export  /goal  /orchestrate  /help"
 
 
 def is_command(prompt: str) -> bool:
@@ -60,6 +60,10 @@ def handle(prompt: str, cfg: AppConfig, memory: Memory) -> bool:
     if cmd == "/goal":
         goal = prompt[len("/goal"):].strip()
         return _handle_goal(goal, cfg, memory)
+
+    if cmd == "/orchestrate":
+        goal = prompt[len("/orchestrate"):].strip()
+        return _handle_orchestrate(goal, cfg, memory)
 
     write_output(f"Unknown command '{cmd}'. Available: {_COMMANDS}")
     return True
@@ -158,5 +162,29 @@ def _handle_goal(goal: str, cfg: AppConfig, memory: Memory) -> bool:
             write_output(event, end="")
     except Exception as exc:  # noqa: BLE001
         logger.error("/goal failed: %s", exc, exc_info=True)
+        write_output(f"\nError: {exc}")
+    return True
+
+
+def _handle_orchestrate(goal: str, cfg: AppConfig, memory: Memory) -> bool:
+    """Run a goal through the multi-agent orchestrator."""
+    if not goal:
+        write_output("Usage: /orchestrate <description of what you want to achieve>")
+        return True
+    if not cfg.orchestrator.enabled:
+        write_output(
+            "Orchestrator is disabled. Set orchestrator.enabled: true in config.yaml."
+        )
+        logger.warning("/orchestrate: disabled in config")
+        return True
+
+    from src.orchestrator import Orchestrator  # noqa: PLC0415
+
+    orch = Orchestrator(cfg)
+    try:
+        for event in orch.run(goal, memory):
+            write_output(event, end="")
+    except Exception as exc:  # noqa: BLE001
+        logger.error("/orchestrate failed: %s", exc, exc_info=True)
         write_output(f"\nError: {exc}")
     return True
