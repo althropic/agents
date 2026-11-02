@@ -11,7 +11,7 @@ from typing import List, Literal, Optional
 
 import yaml
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, PrivateAttr, field_validator
 
 # Load .env early so os.getenv picks up secrets
 load_dotenv()
@@ -97,8 +97,21 @@ class WebFetchConfig(BaseModel):
     timeout_seconds: int = 15
 
 
-class OrchestratorConfig(BaseModel):
-    # Set to true to enable the /orchestrate REPL command.
+class VectorMemoryConfig(BaseModel):
+    # Set enabled: true to activate the persistent vector memory index.
+    # Requires running /index at least once to build the index.
+    enabled: bool = False
+    # Path to store the index JSON file, relative to workspace root.
+    index_path: str = ".agent_memory/index.json"
+    # Reserved for future use: specify an embedding model name
+    # (e.g. "all-MiniLM-L6-v2") when sentence-transformers support is added.
+    # Currently unused — the TF-IDF backend ignores this field.
+    embedding_model: str = "tfidf"
+    # Maximum file size to index in KB. Files larger than this are skipped.
+    max_file_size_kb: int = 100
+
+
+class OrchestratorConfig(BaseModel):    # Set to true to enable the /orchestrate REPL command.
     enabled: bool = False
     # System prompt injected into the routing LLM call that assigns roles.
     # Leave empty to use the built-in router prompt.
@@ -118,6 +131,10 @@ class AppConfig(BaseModel):
     execution: ExecutionConfig = Field(default_factory=ExecutionConfig)
     web_fetch: WebFetchConfig = Field(default_factory=WebFetchConfig)
     orchestrator: OrchestratorConfig = Field(default_factory=OrchestratorConfig)
+    vector_memory: VectorMemoryConfig = Field(default_factory=VectorMemoryConfig)
+    # Runtime-only: holds the live VectorMemory instance when enabled.
+    # Not read from config.yaml — injected by load_config() or /index command.
+    _vector_memory: Optional[object] = PrivateAttr(default=None)
     # Resolved at load time from the --workspace flag (or cwd fallback).
     # Not read from config.yaml — set by load_config().
     workspace: Path = Field(default_factory=Path.cwd, exclude=True)
@@ -142,6 +159,11 @@ class AppConfig(BaseModel):
         p = Path(self.memory.export_path)
         return p.resolve() if p.is_absolute() else (self.workspace / p).resolve()
 
+    def resolved_index_path(self) -> Path:
+        """Return the vector memory index path anchored to workspace."""
+        p = Path(self.vector_memory.index_path)
+        return p.resolve() if p.is_absolute() else (self.workspace / p).resolve()
+
 
 def load_config(
     path: Optional[Path] = None,
@@ -163,4 +185,11 @@ def load_config(
 
     cfg = AppConfig.model_validate(raw)
     cfg.workspace = (workspace or Path.cwd()).resolve()
+
+    if cfg.vector_memory.enabled:
+        from src.memory_store import VectorMemory  # noqa: PLC0415
+        store = VectorMemory(cfg.resolved_index_path())
+        store.load()
+        cfg._vector_memory = store  # noqa: SLF001
+
     return cfg
