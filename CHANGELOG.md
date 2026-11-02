@@ -9,6 +9,20 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Added — Phase 3 Item 5: Persistent Vector Memory
+
+- **`src/memory_tfidf.py`** — New module: pure-stdlib TF-IDF math helpers (`_tokenize`, `_tf`, `_cosine`) and `memory_search_tool()` formatter. Zero new dependencies — runs entirely on the Python stdlib. Re-exported from `memory_store.py` for backward-compatible imports.
+- **`src/memory_store.py`** — New module: `VectorMemory` class. Incremental TF-IDF index with `add()`, `query()` (IDF-weighted cosine similarity, applied at query time), `index_workspace()` (walks allowed roots, skips oversized/non-text files), `save()` / `load()` (JSON persistence). Disabled by default.
+- **`src/agent/mem_schemas.py`** — New module: `MEMORY_TOOLS` — OpenAI function-calling schema for `memory_search`.
+- **`src/agent/schemas.py`** — `MEMORY_TOOLS` merged into `ALL_TOOLS` so the LLM sees the `memory_search` tool when vector memory is enabled.
+- **`src/agent/tools.py`** — `build_tool_map()` gains a `vector_memory` parameter; when provided, adds a `memory_search` callable that delegates to `memory_tfidf.memory_search_tool`.
+- **`src/config.py`** — `VectorMemoryConfig` Pydantic model (`enabled`, `index_path`, `embedding_model`, `max_file_size_kb`). Added to `AppConfig`. `resolved_index_path()` helper added. `load_config()` auto-loads the index when `vector_memory.enabled` is true. `_vector_memory` private attribute (Pydantic `PrivateAttr`) holds the live `VectorMemory` instance.
+- **`config.yaml`** — `vector_memory` section with inline docs. Disabled by default.
+- **`src/repl_ext.py`** — New module: `handle_goal`, `handle_orchestrate`, `handle_index` — extracted from `repl_commands.py` to keep both files under 200 lines. `handle_index` builds the index, saves it, and attaches the live store to `cfg._vector_memory` for immediate use by the loop.
+- **`src/repl_commands.py`** — `/index` slash command added (delegates to `repl_ext.handle_index`). `_handle_goal` / `_handle_orchestrate` / `_handle_index` removed; replaced by imports from `repl_ext`.
+- **`src/agent/loop.py`** — `AgentLoop.__init__` passes `cfg._vector_memory` to `build_tool_map` when `cfg.vector_memory.enabled` is true.
+- **`tests/test_memory_store.py`** — 36 new tests covering text helpers (`_tokenize`, `_tf`, `_cosine`), `VectorMemory` add/query/save/load/index_workspace, `memory_search_tool`, and the `/index` slash command.
+
 ### Added — Phase 3 Item 4: Orchestrator + Sub-Agents
 
 - **`src/agent/profiles.py`** — New module: four specialist `AgentProfile` definitions (researcher, coder, reviewer, tester). Each profile carries a system prompt and a restricted `allowed_tools` list. `PROFILES` registry and `get_profile(name)` lookup exposed for external use.
