@@ -77,3 +77,15 @@ orchestrator:
   # researcher | coder | reviewer | tester.  Missing keys keep the built-in
   # default from src/agent/profiles.py.
   role_overrides: {}
+
+vector_memory:
+  # Set enabled: true to expose the memory_search tool to the agent.
+  # Run /index once to build the index before querying.
+  enabled: false
+  # Path to store the index JSON, relative to the workspace root.
+  index_path: ".agent_memory/index.json"
+  # Reserved: embedding model name for a future sentence-transformers backend.
+  # The current TF-IDF backend ignores this field.
+  embedding_model: "tfidf"
+  # Maximum file size to index in KB. Files larger than this are skipped.
+  max_file_size_kb: 100
