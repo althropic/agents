@@ -181,4 +181,9 @@ def build_tool_map(
         )
     if web_fetch_enabled:
         tool_map.update(build_web_tool_map(web_fetch_max_kb, web_fetch_timeout))
+    if vector_memory is not None:
+        from src.memory_tfidf import memory_search_tool  # noqa: PLC0415
+        tool_map["memory_search"] = lambda query, top_k=5: memory_search_tool(
+            query, top_k, vector_memory
+        )
     return tool_map
