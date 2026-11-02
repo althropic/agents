@@ -18,10 +18,11 @@ from src.agent.memory import Memory
 from src.config import AppConfig
 from src.io import write_output
 from src.logger import get_logger
+from src.repl_ext import handle_goal, handle_index, handle_orchestrate
 
 logger = get_logger(__name__)
 
-_COMMANDS = "/think  /model  /reason  /export  /goal  /orchestrate  /help"
+_COMMANDS = "/think  /model  /reason  /export  /goal  /orchestrate  /index  /help"
 
 
 def is_command(prompt: str) -> bool:
@@ -59,11 +60,14 @@ def handle(prompt: str, cfg: AppConfig, memory: Memory) -> bool:
 
     if cmd == "/goal":
         goal = prompt[len("/goal"):].strip()
-        return _handle_goal(goal, cfg, memory)
+        return handle_goal(goal, cfg, memory)
 
     if cmd == "/orchestrate":
         goal = prompt[len("/orchestrate"):].strip()
-        return _handle_orchestrate(goal, cfg, memory)
+        return handle_orchestrate(goal, cfg, memory)
+
+    if cmd == "/index":
+        return handle_index(cfg)
 
     write_output(f"Unknown command '{cmd}'. Available: {_COMMANDS}")
     return True
@@ -144,47 +148,4 @@ def _handle_export(
     out = memory.export_markdown(label=label)
     write_output(f"Session exported → {out}")
     logger.info("/export: wrote %s", out)
-    return True
-
-
-def _handle_goal(goal: str, cfg: AppConfig, memory: Memory) -> bool:
-    """Run a goal through the structured task queue."""
-    if not goal:
-        write_output("Usage: /goal <description of what you want to achieve>")
-        return True
-    from src.agent.loop import AgentLoop  # noqa: PLC0415
-    from src.task_queue import TaskQueue  # noqa: PLC0415
-
-    loop = AgentLoop(cfg)
-    queue = TaskQueue(loop, cfg)
-    try:
-        for event in queue.run(goal, memory):
-            write_output(event, end="")
-    except Exception as exc:  # noqa: BLE001
-        logger.error("/goal failed: %s", exc, exc_info=True)
-        write_output(f"\nError: {exc}")
-    return True
-
-
-def _handle_orchestrate(goal: str, cfg: AppConfig, memory: Memory) -> bool:
-    """Run a goal through the multi-agent orchestrator."""
-    if not goal:
-        write_output("Usage: /orchestrate <description of what you want to achieve>")
-        return True
-    if not cfg.orchestrator.enabled:
-        write_output(
-            "Orchestrator is disabled. Set orchestrator.enabled: true in config.yaml."
-        )
-        logger.warning("/orchestrate: disabled in config")
-        return True
-
-    from src.orchestrator import Orchestrator  # noqa: PLC0415
-
-    orch = Orchestrator(cfg)
-    try:
-        for event in orch.run(goal, memory):
-            write_output(event, end="")
-    except Exception as exc:  # noqa: BLE001
-        logger.error("/orchestrate failed: %s", exc, exc_info=True)
-        write_output(f"\nError: {exc}")
     return True
