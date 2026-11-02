@@ -121,4 +121,4 @@ FILE_TOOLS: List[Dict[str, Any]] = [
 ]
 
 # Combined list sent to the LLM so it knows every available tool.
-ALL_TOOLS: List[Dict[str, Any]] = FILE_TOOLS + ACTION_TOOLS + WEB_TOOLS
+ALL_TOOLS: List[Dict[str, Any]] = FILE_TOOLS + ACTION_TOOLS + WEB_TOOLS + MEMORY_TOOLS
