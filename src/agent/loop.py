@@ -41,13 +41,15 @@ class AgentLoop:
             web_fetch_enabled=config.web_fetch.enabled,
             web_fetch_max_kb=config.web_fetch.max_response_kb,
             web_fetch_timeout=config.web_fetch.timeout_seconds,
+            vector_memory=config._vector_memory if config.vector_memory.enabled else None,  # noqa: SLF001
         )
         logger.info(
-            "AgentLoop ready: model=%s max_iter=%d workspace=%s web_fetch=%s",
+            "AgentLoop ready: model=%s max_iter=%d workspace=%s web_fetch=%s vector_memory=%s",
             config.llm.model,
             config.agent.max_iterations,
             config.workspace,
             config.web_fetch.enabled,
+            config.vector_memory.enabled,
         )
 
     # ------------------------------------------------------------------
