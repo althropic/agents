@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Any, Dict, List
 
 from src.agent.action_schemas import ACTION_TOOLS
+from src.agent.mem_schemas import MEMORY_TOOLS
 from src.agent.web_schemas import WEB_TOOLS
 
 FILE_TOOLS: List[Dict[str, Any]] = [
