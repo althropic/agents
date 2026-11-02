@@ -156,10 +156,14 @@ def build_tool_map(
     web_fetch_enabled: bool = False,
     web_fetch_max_kb: int = 100,
     web_fetch_timeout: int = 15,
+    vector_memory=None,
 ) -> Dict[str, Any]:
     """
     Return a name → callable mapping with allowed_roots and max_size_kb
     already bound, ready for the agent loop to call directly.
+
+    Pass a VectorMemory instance as *vector_memory* to expose
+    the memory_search tool.
     """
     from src.agent.action_tools import build_action_tool_map  # noqa: PLC0415
     from src.agent.web_tools import build_web_tool_map  # noqa: PLC0415
