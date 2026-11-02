@@ -236,6 +236,6 @@ class TestReplCommandGoal:
     def test_goal_missing_description(self, agent_config: AppConfig):
         memory = Memory(system_prompt="test", persist=False, export_path=".mem")
         import src.repl_commands as rc
-        with patch("src.repl_commands.write_output") as mock_out:
+        with patch("src.repl_ext.write_output") as mock_out:
             rc.handle("/goal", agent_config, memory)
         assert "Usage" in mock_out.call_args[0][0]
