@@ -333,7 +333,7 @@ class TestOrchestrateCommand:
 
     def test_orchestrate_runs_orchestrator(self, cfg, mem):
         cfg.orchestrator.enabled = True
-        with patch("src.repl_commands._handle_orchestrate") as mock_handler:
+        with patch("src.repl_commands.handle_orchestrate") as mock_handler:
             mock_handler.return_value = True
             result = repl_commands.handle("/orchestrate refactor config.py", cfg, mem)
         mock_handler.assert_called_once()
