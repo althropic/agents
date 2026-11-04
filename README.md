@@ -7,6 +7,8 @@ An AI assistant that works with your codebase in plain English. Ask it to read f
 >>> run the tests and tell me what failed
 >>> what changed since the last commit?
 >>> find all Python files under tests/
+>>> /goal refactor src/config.py to add named profiles
+>>> /orchestrate add pagination to the /users endpoint
 ```
 
 Runs entirely on your machine using a local AI model. No internet connection, no data leaving your computer.
@@ -21,7 +23,7 @@ You'll need:
 - [Ollama](https://ollama.com) — runs the AI model locally (vLLM or llama.cpp also work)
 - Python 3.11
 
-**Start Ollama and pull the model (one time):**
+**Start Ollama and pull a model (one time):**
 
 ```bash
 ollama serve
@@ -76,6 +78,7 @@ Type your request, or 'exit' to quit. Type /help for commands.
 >>> /think off
 >>> /reason on
 >>> find all .py files under tests/
+>>> /goal refactor src/config.py to support named profiles
 >>> /export my-session
 >>> exit
 ```
@@ -88,6 +91,9 @@ Type your request, or 'exit' to quit. Type /help for commands.
 | `/reason on\|off` | Show or hide the model's chain-of-thought trace (dimmed, inline) |
 | `/model <name>` | Switch the active model for this session |
 | `/export [label]` | Save the conversation to a markdown file |
+| `/goal <description>` | Break a goal into subtasks and execute them in sequence |
+| `/orchestrate <description>` | Route subtasks to specialist sub-agents (researcher, coder, reviewer, tester). Requires `orchestrator.enabled: true` in config |
+| `/index` | Build (or rebuild) the vector memory index from the workspace. Requires `vector_memory.enabled: true` in config |
 | `/help` | List all available commands |
 
 **Point the assistant at a different directory:**
@@ -96,7 +102,7 @@ Type your request, or 'exit' to quit. Type /help for commands.
 agent --workspace /path/to/other/project
 ```
 
-The `--workspace` flag sets the root directory the assistant is allowed to read and write. It also becomes the base for resolving any relative paths in `config.yaml` (like `allowed_roots` and `memory.export_path`).
+The `--workspace` flag sets the root directory the assistant is allowed to read and write. It also becomes the base for resolving any relative paths in `config.yaml`.
 
 **Run a single task and exit:**
 
@@ -123,13 +129,17 @@ scripts\run.bat "summarize src/config.py"
 | List a folder | "what files are in the src/ folder?" |
 | Search for files | "find all markdown files in this project" |
 | Search inside a file | "find every line in tools.py that mentions 'error'" |
+| Fetch a web page | "fetch the httpx docs and show me how to set a timeout" |
 | Run a shell command | "run pytest and show me the results" |
 | Check git status | "what changed since the last commit?" |
 | Show a git diff | "show me the unstaged diff" |
 | Commit changes | "stage everything and commit with message 'fix bug'" |
 | Run tests | "run the test suite" |
+| Search the memory index | "find the file that handles rate limiting" |
+| Plan a goal | `/goal refactor config.py to support named profiles` |
+| Orchestrate a task | `/orchestrate add pagination to the /users endpoint` |
 
-The assistant can only access folders listed under `file_access.allowed_roots` in `config.yaml`, resolved relative to the active workspace. Shell, git, and test tools only run commands listed under `execution.allowed_commands`. Anything outside either guard is blocked.
+The assistant can only access folders listed under `file_access.allowed_roots` in `config.yaml`. Shell, git, and test tools only run commands listed under `execution.allowed_commands`. Anything outside either guard is blocked.
 
 ---
 
@@ -141,19 +151,30 @@ All settings are in `config.yaml`. Open it to change how the assistant behaves.
 |---------|---------|-------------|
 | `llm.base_url` | `http://localhost:8080/v1` | Where your AI model server is running |
 | `llm.model` | `nemotron-3-ultra` | Which model to use |
-| `llm.max_tokens` | `32000` | Maximum tokens the model may generate (include reasoning traces) |
-| `llm.thinking_effort` | `high` | Reasoning depth for Ollama/OpenAI servers, sent as `reasoning_effort`: `none`/`low`/`medium`/`high`/`max` |
-| `llm.thinking_budget` | `0` | Integer token budget, used only when `thinking_param` is an Anthropic-style key (e.g. `thinking`); `0` to disable |
-| `llm.thinking_param` | `reasoning_effort` | Which `extra_body` key carries thinking config — `reasoning_effort` (Ollama/OpenAI, uses `thinking_effort`) or `thinking` (Anthropic, uses `thinking_budget`) |
-| `llm.show_reasoning` | `false` | Print the model's chain-of-thought inline (dimmed) as it streams. Toggle live with `/reason on\|off` |
-| `agent.max_iterations` | `20` | How many steps the assistant takes before giving up |
-| `agent.max_file_size_kb` | `100` | Files bigger than this (in KB) won't be read |
+| `llm.max_tokens` | `32000` | Maximum tokens the model may generate |
+| `llm.thinking_effort` | `high` | Reasoning depth: `none`/`low`/`medium`/`high`/`max` |
+| `llm.thinking_budget` | `0` | Integer token budget for Anthropic-style endpoints; `0` to disable |
+| `llm.thinking_param` | `reasoning_effort` | `extra_body` key for thinking config (`reasoning_effort` or `thinking`) |
+| `llm.show_reasoning` | `false` | Print chain-of-thought inline (dimmed). Toggle with `/reason on\|off` |
+| `agent.max_iterations` | `20` | Steps before giving up on a task |
+| `agent.max_file_size_kb` | `100` | Files larger than this won't be read |
+| `agent.planner_prompt` | *(built-in)* | System prompt for the `/goal` planning step |
 | `file_access.allowed_roots` | `["."]` | Folders the assistant can access, relative to `--workspace` |
 | `memory.persist` | `false` | Save the conversation to disk after each session |
-| `memory.export_path` | `.agent_memory` | Where to write saved sessions, relative to `--workspace` |
-| `logging.level` | `INFO` | How much detail to write to the log file |
-| `execution.allowed_commands` | `["pytest", "python", "pip", "git"]` | Commands the agent may run via shell/git/test tools |
-| `execution.timeout_seconds` | `30` | Maximum seconds a shell command may run before being killed |
+| `memory.export_path` | `.agent_memory` | Where to write saved sessions |
+| `logging.level` | `INFO` | Log verbosity |
+| `execution.allowed_commands` | `["pytest","python","pip","git"]` | Commands the agent may run |
+| `execution.timeout_seconds` | `30` | Max seconds a shell command may run |
+| `web_fetch.enabled` | `false` | Allow the agent to fetch public URLs |
+| `web_fetch.max_response_kb` | `100` | Max response size for web fetches |
+| `web_fetch.timeout_seconds` | `15` | Request timeout for web fetches |
+| `orchestrator.enabled` | `false` | Enable the `/orchestrate` multi-agent command |
+| `orchestrator.router_prompt` | `""` | Override the built-in role-routing system prompt |
+| `orchestrator.role_overrides` | `{}` | Per-role system prompt overrides (researcher/coder/reviewer/tester) |
+| `vector_memory.enabled` | `false` | Enable the `memory_search` tool and `/index` command |
+| `vector_memory.index_path` | `.agent_memory/index.json` | Where to store the TF-IDF index |
+| `vector_memory.embedding_model` | `tfidf` | Reserved for a future sentence-transformers backend |
+| `vector_memory.max_file_size_kb` | `100` | Files larger than this are skipped during indexing |
 
 To use a different API key, create a `.env` file in the project folder:
 
@@ -176,7 +197,7 @@ conda activate ./.conda
 pytest
 ```
 
-The tests don't need a live AI model — they run entirely with a fake one. All 104 should pass in under 15 seconds.
+The tests don't need a live AI model — they run entirely with a fake one. All 205 should pass in under 20 seconds.
 
 ---
 
@@ -184,21 +205,31 @@ The tests don't need a live AI model — they run entirely with a fake one. All 
 
 ```
 src/
-  config.py        loads and checks settings from config.yaml
-  io.py            write_output() — routes all terminal output to stdout
-  logger.py        handles writing to the log file
-  repl_commands.py slash-command dispatcher (/think, /reason, /model, /export, /help)
-  runner.py        starts the assistant (interactive or single task)
+  config.py              loads and validates settings from config.yaml
+  io.py                  write_output() — all terminal output routes here
+  logger.py              rotating file logger factory
+  repl_commands.py       slash-command dispatcher (/think, /reason, /model, etc.)
+  repl_ext.py            heavy slash-command handlers (/goal, /orchestrate, /index)
+  runner.py              CLI entry point (interactive REPL or single-shot)
+  task_queue.py          TaskQueue — breaks a /goal into subtasks
+  orchestrator.py        Orchestrator — routes subtasks to specialist sub-agents
+  orchestrator_helpers.py  task router and scoped loop factory
+  memory_store.py        VectorMemory — TF-IDF index with JSON persistence
+  memory_tfidf.py        TF-IDF math helpers and memory_search_tool formatter
   agent/
-    schemas.py     file tool schemas (FILE_TOOLS) + combined ALL_TOOLS
-    action_schemas.py   action tool schemas (shell, git, tests)
-    tools.py       the file actions (read, write, list, search)
-    action_tools.py     the action tools (run_command, git, tests)
-    loop.py        the main thinking loop
-    memory.py      keeps track of the conversation
-    reasoning.py   extracts chain-of-thought from streaming deltas
-tests/             automated checks
-logs/              log files (created automatically)
-config.yaml        all your settings
-pyproject.toml     package manifest — defines the `agent` CLI command
+    schemas.py           FILE_TOOLS + ACTION_TOOLS + WEB_TOOLS + MEMORY_TOOLS → ALL_TOOLS
+    action_schemas.py    action tool schemas (shell, git, tests)
+    mem_schemas.py       memory_search tool schema
+    web_schemas.py       web_fetch tool schema
+    tools.py             file tool implementations + build_tool_map()
+    action_tools.py      shell, git, and test tool implementations
+    web_tools.py         web_fetch tool implementation
+    profiles.py          specialist agent profiles (researcher/coder/reviewer/tester)
+    loop.py              ReAct think→act→observe loop
+    memory.py            conversation history, export to JSON/markdown
+    reasoning.py         extracts chain-of-thought from streaming deltas
+tests/                   automated checks (205 tests, no live model required)
+logs/                    log files (created automatically)
+config.yaml              all runtime settings
+pyproject.toml           package manifest — defines the `agent` CLI command
 ```
